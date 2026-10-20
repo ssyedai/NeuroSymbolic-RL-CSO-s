@@ -56,7 +56,8 @@ def main(argv=None):
     assert_v8_scenario_manifest(a.rain_dir, allow_exploratory=a.exploratory)
     pool = [s for s in storms if s.split in want]
     if a.max_storms:
-        pool = pool[: a.max_storms]
+        from multistorm.train_multi import _balanced_rung_cap
+        pool = _balanced_rung_cap(pool, a.max_storms)
 
     nodes = pd.read_csv("configs/v8_diag_nodes.csv")
     full = {r.id: max(r.full_depth, 0.1) for r in nodes.itertuples()}

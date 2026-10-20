@@ -47,6 +47,7 @@ class MultiStormConfig:
     controllability_summary: Optional[str] = None
     eager_baselines: bool = False
     max_val_eval: int = 0
+    max_final_val_eval: int = 0
     strict_safety_selection: bool = False
     evaluate_test: bool = False
     exploratory: bool = False
@@ -116,6 +117,8 @@ def parse_args(argv=None) -> MultiStormConfig:
     p.add_argument("--eager-baselines", action="store_true", default=False)
     p.add_argument("--max-val-eval", type=int, default=0,
                    help="Cap validation storms used for mid-training selection (0=all)")
+    p.add_argument("--max-final-val-eval", type=int, default=0,
+                   help="Exploratory-only cap for final validation (0=all)")
     p.add_argument("--strict-safety-selection", action="store_true",
                    help="Reject checkpoints that fail safety, including zero-when-feasible")
     p.add_argument("--evaluate-test", action="store_true",
@@ -149,6 +152,7 @@ def parse_args(argv=None) -> MultiStormConfig:
         controllability_summary=a.controllability_summary,
         eager_baselines=a.eager_baselines,
         max_val_eval=a.max_val_eval,
+        max_final_val_eval=a.max_final_val_eval,
         strict_safety_selection=a.strict_safety_selection,
         evaluate_test=a.evaluate_test,
         exploratory=a.exploratory,

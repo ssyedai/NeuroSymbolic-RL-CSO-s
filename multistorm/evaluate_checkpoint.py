@@ -64,6 +64,8 @@ def main(argv=None):
     ap.add_argument("--repeat-check", action="store_true")
     ap.add_argument("--out", default=None)
     ap.add_argument("--exploratory", action="store_true")
+    ap.add_argument("--max-storms", type=int, default=0,
+                    help="Exploratory validation-only diagnostic cap")
     args = ap.parse_args(argv)
 
     status = experiment_status(args.exploratory)
@@ -76,6 +78,8 @@ def main(argv=None):
     if not wanted or not wanted <= {"val", "test"}:
         raise ValueError("--splits must contain only val and/or test")
     protocol_commit = _protocol_commit(args.protocol_tag) if "test" in wanted else None
+    if args.max_storms and (not args.exploratory or wanted != {"val"}):
+        raise ValueError("--max-storms is only allowed for exploratory validation")
 
     split_path = Path(cfg.split_manifest or Path(cfg.rain_dir) / "splits.json")
     split_map = json.loads(split_path.read_text())
@@ -84,6 +88,9 @@ def main(argv=None):
                          storm_ids=selected)
     storms, _ = assign_splits(storms, cfg.split_seed, str(split_path),
                                cfg.val_frac, cfg.test_frac)
+    if args.max_storms:
+        from .train_multi import _balanced_rung_cap
+        storms = _balanced_rung_cap(storms, args.max_storms)
     assert_provenance(storms, cfg.rain_dir, cfg.data_manifest)
     assert_v8_scenario_manifest(
         cfg.rain_dir, cfg.data_manifest,
@@ -125,6 +132,7 @@ def main(argv=None):
         protocol_tag=args.protocol_tag if protocol_commit else None,
         protocol_commit=protocol_commit, splits=sorted(wanted), deterministic=True,
         repeat_checked=bool(args.repeat_check), aggregates=aggregates,
+        diagnostic_max_storms=int(args.max_storms),
         research_status=status["research_status"],
         hydraulic_gate_passed=status["hydraulic_gate_passed"],
     )

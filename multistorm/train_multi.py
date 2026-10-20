@@ -143,6 +143,23 @@ def _v8_selection(vdf: pd.DataFrame) -> float:
     return validation_selection(vdf)
 
 
+def _balanced_rung_cap(storms, limit):
+    if not limit or len(storms) <= limit:
+        return list(storms)
+    groups = {}
+    for storm in sorted(storms, key=lambda s: s.storm_id):
+        groups.setdefault(str((storm.meta or {}).get("rung", "unknown")), []).append(storm)
+    selected = []
+    while groups and len(selected) < limit:
+        for rung in sorted(list(groups)):
+            if len(selected) >= limit:
+                break
+            selected.append(groups[rung].pop(0))
+            if not groups[rung]:
+                del groups[rung]
+    return selected
+
+
 def main(cfg=None):
     cfg = cfg or parse_args()
     experiment = dict(research_status="legacy", exploratory=False,
@@ -152,6 +169,8 @@ def main(cfg=None):
         experiment = experiment_status(cfg.exploratory)
         if cfg.exploratory and not cfg.run_name.startswith("exploratory_"):
             raise ValueError("Exploratory v8 run names must start with 'exploratory_'")
+        if cfg.max_final_val_eval and not cfg.exploratory:
+            raise ValueError("--max-final-val-eval is exploratory-only")
     run = Path(cfg.out_dir) / cfg.run_name
     if (run / "train_log.csv").exists() and not cfg.resume:
         raise ValueError("Run already contains training results; choose a new run name or resume explicitly")
@@ -435,7 +454,7 @@ def main(cfg=None):
     if use_v8_train and strict_selection and not best_path.exists():
         env.close()
         raise RuntimeError("No safety-feasible validation checkpoint; stop before final evaluation")
-    final_storms = val_full
+    final_storms = _balanced_rung_cap(val_full, cfg.max_final_val_eval)
     log.info("Final eval on all %d validation storms; test data were not loaded", len(final_storms))
     frames = [evaluate(agent, env, final_storms, bstore, "final", None, cso_floor=cfg.cso_floor)]
     fdf = pd.concat(frames)

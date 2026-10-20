@@ -92,6 +92,8 @@ def test_diagnostic_cap_spreads_across_rungs():
     ]
     selected = _balanced_cap(storms, 2)
     assert {s.meta["rung"] for s in selected} == {"C1", "T10"}
+    selected_train = train_multi._balanced_rung_cap(storms, 2)
+    assert {s.meta["rung"] for s in selected_train} == {"C1", "T10"}
 
 
 def test_reduced_controllability_screen_cannot_exclude_training_rungs(tmp_path):

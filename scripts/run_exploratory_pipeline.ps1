@@ -99,14 +99,23 @@ $trainArgs = @(
     "--run-name", $RunName, "--controllability-summary", "$g2.summary.json",
     "--exploratory"
 )
+if ($Mode -eq "smoke") {
+    $trainArgs += @("--max-final-val-eval", "6")
+}
 if ($thetaResult.b3_beats_b2_on_val -eq $true) {
     $trainArgs += @("--theta-path", $theta)
 }
 Invoke-Python @trainArgs
 
-Invoke-Python -m multistorm.evaluate_checkpoint `
-    --run "runs/exploratory/$RunName" --splits val `
-    --repeat-check --exploratory
+$evalArgs = @(
+    "-m", "multistorm.evaluate_checkpoint",
+    "--run", "runs/exploratory/$RunName", "--splits", "val",
+    "--repeat-check", "--exploratory"
+)
+if ($Mode -eq "smoke") {
+    $evalArgs += @("--max-storms", "6")
+}
+Invoke-Python @evalArgs
 
 Write-Host "Exploratory $Mode pipeline complete. No test split was evaluated."
 Write-Host "These outputs are pipeline diagnostics, not verified performance evidence."
