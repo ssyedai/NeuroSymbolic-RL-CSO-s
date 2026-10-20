@@ -403,13 +403,14 @@ class NeurosymbolicSWMMEnv(Env):
                  control_time_step: int = CONTROL_TIME_STEP,
                  use_volume: bool = False,
                  rainfall_series: np.ndarray = None,
-                 use_projection: bool = True,          # v8: False bypasses kb.project_action (pumps still 1.0)
-                 policy_dim: int = 10,                 # v8: 7 = gates only, env appends pumps = 1
+                 use_projection: bool = True,          # v8: False bypasses kb.project_action
+                 policy_dim: int = 10,                 # v8: 7 = gates only; 10 is an explicit pump ablation
                  time_limit_truncation: bool = False,  # v8: horizon returned as truncated, not terminated
                  real_only: bool = False,              # v8: refuse legacy (inflated) rain path
                  full_horizon: bool = False,          # opt-in: include final control interval
                  native_pumps: bool = False,           # diagnostic ablation: preserve pump interlocks
-                 external_gate_control: bool = False): # v8: remove INP gate rules from generated episode INPs
+                 external_gate_control: bool = False, # v8: remove INP gate rules from generated episode INPs
+                 policy_controls_pumps: bool = False): # 10-D ablation only: policy owns pumps too
         self.kb          = knowledge_base
         self.use_projection = use_projection
         self.policy_dim = policy_dim
@@ -418,6 +419,11 @@ class NeurosymbolicSWMMEnv(Env):
         self.full_horizon = full_horizon
         self.native_pumps = native_pumps
         self.external_gate_control = external_gate_control
+        self.policy_controls_pumps = policy_controls_pumps
+        if self.policy_controls_pumps and self.policy_dim != 10:
+            raise ValueError("policy_controls_pumps requires policy_dim=10")
+        if self.policy_controls_pumps and self.native_pumps:
+            raise ValueError("Pumps cannot be owned by both the policy and native rules")
         self._control_rules_removed = False
         self.base_input_file = input_file or self.INPUT_FILE
         self.input_file  = self.base_input_file
@@ -614,9 +620,10 @@ class NeurosymbolicSWMMEnv(Env):
         else:
             if self.use_projection:
                 proj = self.kb.project_action(raw_np, self._obs_dict)
-            else:                                   # v8 ablation: shield off, pumps still ON
+            else:                                   # v8 ablation: shield off
                 proj = np.clip(raw_np, 0.0, 1.0)
-                proj[self.kb.PUMP_IDXS] = 1.0
+                if not self.policy_controls_pumps:
+                    proj[self.kb.PUMP_IDXS] = 1.0
             # Apply projected actions (35281_B/35291_B now freely set by agent)
             self.O1360.target_setting    = proj[0]
             self.O1360_B.target_setting  = proj[1]

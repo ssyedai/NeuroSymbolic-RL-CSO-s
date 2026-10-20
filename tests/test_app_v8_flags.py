@@ -50,6 +50,20 @@ def test_use_projection_false_leaves_gates_pumps_on(env):
     np.testing.assert_allclose(proj[7:], np.ones(3), atol=1e-9)
 
 
+def test_explicit_10d_policy_can_control_pumps(env):
+    old = (env.use_projection, env.native_pumps, env.policy_controls_pumps)
+    try:
+        env.use_projection = False
+        env.native_pumps = False
+        env.policy_controls_pumps = True
+        env.reset()
+        raw = np.array([0.5] * 7 + [0.2, 0.4, 0.6])
+        env.step(raw)
+        np.testing.assert_allclose(env.ep_proj_actions[-1], raw, atol=1e-9)
+    finally:
+        env.use_projection, env.native_pumps, env.policy_controls_pumps = old
+
+
 def test_time_limit_truncation(env):
     env.time_limit_truncation = True
     env.reset()

@@ -18,7 +18,8 @@ class KnowledgeBaseV8:
 
     def __init__(self, node_full_depths: dict, junction_ids, gate_topology: dict, theta: dict | None = None,
                  w_cso=10.0, w_store=2.0, eps_cso=0.01, cso_floor=1.0, v_scale_m3=1000.0, margin=2.0,
-                 horizon=287, cso_scale=100.0, flood_scale=100.0, use_rain_features=True):
+                 horizon=287, cso_scale=100.0, flood_scale=100.0, use_rain_features=True,
+                 freeze_pumps=True):
         self.full = node_full_depths
         self.junctions = [n for n in junction_ids if n in node_full_depths]
         self.topo = gate_topology
@@ -27,6 +28,7 @@ class KnowledgeBaseV8:
         self.cso_floor, self.v_scale, self.margin, self.T = cso_floor, v_scale_m3, margin, horizon
         self.cso_scale, self.flood_scale = cso_scale, flood_scale
         self.extra_dim = len(RAIN_SCALES) if use_rain_features else 0
+        self.freeze_pumps = bool(freeze_pumps)
         self.ref_cso = float(cso_floor)
         self.last_info: dict = {}
 
@@ -61,10 +63,14 @@ class KnowledgeBaseV8:
     def project_action(self, raw, obs) -> np.ndarray:
         raw = np.asarray(raw, float)
         a = np.clip(raw.copy(), 0.0, 1.0)
-        if a.size >= 10:
+        if a.size >= 10 and self.freeze_pumps:
             a[self.PUMP_IDXS] = 1.0
         th, delta = self.theta, self.theta["delta"]
-        ufill = obs.get("storage_unit_fill", {})
+        # For the complete physical objective, "usable" means capacity below
+        # the first overflow crest.  Full-depth capacity can be much larger and
+        # would falsely tell the shield that storage remains available while it
+        # is already spilling.
+        ufill = obs.get("usable_storage_unit_fill", obs.get("storage_unit_fill", {}))
         cso_now = float(obs["cso_flow"]) > self.eps
         flood_now = float(obs["flooding"]) > th["flood_cfs"]
         flags = dict(F1=0, F2=0, S1=0)
@@ -77,7 +83,7 @@ class KnowledgeBaseV8:
             risk = max(drs) if drs else 0.0
             stor = [ufill[n] for n in ctx["storage_down"] if n in ufill]
             full = bool(stor) and min(stor) >= 1 - delta
-            spill_direct = bool(ctx["weirs_down"]) and not stor
+            spill_direct = bool(ctx["weirs_down"] or ctx.get("cso_outfalls_down", [])) and not stor
             cands = [(0.0, None)]
             if flood_now:
                 cands.append((th["theta_f_open"] if (spill_direct or full) else 1.0, "F2"))

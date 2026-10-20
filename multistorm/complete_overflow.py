@@ -69,7 +69,7 @@ class CompleteOverflowEnv(NeurosymbolicSWMMEnv):
             text = path.read_text()
             def control_section(match):
                 if not self.native_pumps:
-                    return "[CONTROLS]\n; External gates; pumps commanded ON.\n\n"
+                    return "[CONTROLS]\n; External gates and pumps; no native actuator rules.\n\n"
                 blocks = re.split(r"(?im)^(?=RULE\s)", match.group(0))
                 kept = []
                 for block in blocks:
@@ -125,20 +125,42 @@ class CompleteOverflowEnv(NeurosymbolicSWMMEnv):
             cso_step_m3=cso_step, flood_step_m3=flood_step,
         )
         volumes = {n: float(self._node_obj[n].volume) for n in self.storage_ids}
+        physical_unit_fill = {n: volumes[n] / self._vol_capacity[n] for n in volumes}
+        usable_unit_fill = {
+            n: min(volumes[n], self._usable_capacity[n]) / self._usable_capacity[n]
+            for n in volumes
+        }
+        physical_fill_ratio = sum(volumes.values()) / sum(self._vol_capacity.values())
+        usable_fill_ratio = (
+            sum(min(volumes[n], self._usable_capacity[n]) for n in volumes)
+            / sum(self._usable_capacity.values())
+        )
         self._obs_dict["storage_fill"] = sum(volumes.values()) * FT3_TO_M3
-        self._obs_dict["storage_unit_fill"] = {n: volumes[n] / self._vol_capacity[n] for n in volumes}
-        self._obs_dict["store_fill_ratio"] = sum(volumes.values()) / sum(self._vol_capacity.values())
-        self._obs_dict["usable_store_fill_ratio"] = (
-            sum(min(volumes[n], self._usable_capacity[n]) for n in volumes) / sum(self._usable_capacity.values()))
+        self._obs_dict["storage_unit_fill"] = physical_unit_fill
+        self._obs_dict["physical_store_fill_ratio"] = physical_fill_ratio
+        self._obs_dict["usable_storage_unit_fill"] = usable_unit_fill
+        # The complete-objective symbolic state follows capacity available
+        # before overflow, not volume above an overflow crest.
+        self._obs_dict["store_fill_ratio"] = usable_fill_ratio
+        self._obs_dict["usable_store_fill_ratio"] = usable_fill_ratio
         self._previous_volumes = now
         from pyswmm import SystemStats
         routing = SystemStats(self.sim).routing_stats
         gross_outward = float(routing["outflow"]) * FT3_TO_M3
         treated = max(0.0, gross_outward - now["cso"])
+        if not self._control_rules_removed:
+            control_owner = "INP native"
+            pump_control = "INP native"
+        elif self.policy_controls_pumps:
+            control_owner = "external gates and pumps"
+            pump_control = "external policy"
+        else:
+            control_owner = "external gates"
+            pump_control = "ON" if not self.native_pumps else "INP native"
         self._accounting = dict(
             volume_units="m3", volume_method="SWMM cumulative node statistics",
-            control_owner="external" if self._control_rules_removed else "INP native",
-            pump_control="ON" if self._control_rules_removed and not self.native_pumps else "INP native",
+            control_owner=control_owner,
+            pump_control=pump_control,
             flow_sampling="15-minute interval means from cumulative volumes",
             cso_definition="54+65+54_B+65_B", overflow_accounting_complete=True,
             cso_total=now["cso"], flood_total=now["flood"],
@@ -232,14 +254,21 @@ class CompleteOverflowKB(KnowledgeBaseV8):
     """
     def project_action(self, raw, obs):
         a = super().project_action(raw, obs)
-        for gate in (3, 4):
+        direct = [g for g, ctx in self.topo.items()
+                  if ctx.get("cso_outfalls_down") and not ctx.get("storage_down")]
+        # Backward compatibility for old generated topology CSVs. New topology
+        # files identify these gates from the graph instead of their indices.
+        if not direct and not any("cso_outfalls_down" in ctx for ctx in self.topo.values()):
+            direct = [3, 4]
+        for gate in direct:
             ctx = self.topo[gate]
             risk = max(self._dr(obs, ctx["risk_up"]) or [0.0])
             emergency = risk >= self.theta["theta_f"] or float(obs["flooding"]) > self.theta["flood_cfs"]
             if not emergency and a[gate] > 0:
                 self.last_info["explanations"].append(dict(
                     gate_idx=gate, rule="BYPASS_CLOSE", proposed=float(a[gate]), applied=0.0,
-                    upstream_depth_ratio=float(risk), reason="Untreated bypass; no upstream flood trigger"))
+                    upstream_depth_ratio=float(risk), reason="Untreated bypass; no upstream flood trigger",
+                    affected_outfalls=list(ctx.get("cso_outfalls_down", []))))
                 a[gate] = 0.0
         self.last_info["intervention"] = float(np.abs(a[:7] - np.clip(np.asarray(raw)[:7], 0, 1)).mean())
         return a

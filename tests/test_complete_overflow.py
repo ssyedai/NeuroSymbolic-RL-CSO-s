@@ -30,6 +30,30 @@ def test_bypass_rule_has_auditable_flood_exception():
     assert np.all(action[3:5] >= 0.5)
 
 
+def test_shield_uses_capacity_below_overflow_crest():
+    topo = {g: dict(risk_up=["up"], storage_down=["store"], weirs_down=["spill"])
+            for g in range(7)}
+    kb = CompleteOverflowKB({"up": 10}, ["up"], topo)
+    obs = dict(
+        node_depths={"up": 1}, flooding=0, cso_flow=2,
+        store_fill_ratio=1.0,
+        storage_unit_fill={"store": 0.35},
+        usable_storage_unit_fill={"store": 1.0},
+    )
+    action = kb.project_action(np.zeros(7), obs)
+    # Storage has reached its overflow crest, so the storage-first lower bound
+    # must not force a gate open just because full-depth capacity is only 35%.
+    np.testing.assert_allclose(action, np.zeros(7))
+
+
+def test_10d_kb_does_not_discard_policy_pump_actions():
+    topo = {g: dict(risk_up=[], storage_down=[], weirs_down=[]) for g in range(7)}
+    kb = CompleteOverflowKB({}, [], topo, freeze_pumps=False)
+    obs = dict(node_depths={}, flooding=0, cso_flow=0, store_fill_ratio=0)
+    raw = np.array([0.5] * 7 + [0.2, 0.4, 0.6])
+    np.testing.assert_allclose(kb.project_action(raw, obs)[7:], raw[7:])
+
+
 def test_complete_score_rejects_increased_total_overflow():
     ref = dict(volume_units="m3", cso_total=100, flood_total=0, total_overflow_vol_m3=100)
     s = dict(volume_units="m3", cso_total=99, flood_total=9, total_overflow_vol_m3=108,

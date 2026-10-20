@@ -47,6 +47,15 @@ The group's public INP [66] uses the same seven orifice IDs and the same three p
 
 **Result.** The search identified studies using this model or catchment from one group only: FIU (A.S. León, Civil & Environmental Engineering, with M.H. Amini, Computing & Information Sciences). There are five outputs, plus a dataset and a public INP. None of the 19 works citing Yin et al. 2024 that were inspected is a same-site study apart from the group's own follow-ups. I found no thesis or dissertation in a public repository: Yin's PhD (FIU, Spring 2024) is confirmed on the lab page [73], but I did not locate the ETD itself. I found no arXiv preprint for any same-site paper.
 
+**Later code artifact supplied by the project owner.** A separate 291-line
+Python text uses a 15-minute external control interval and the same seven gates
+and three pumps. It is not treated as the public repository's code or as
+published evidence. As shared, it is a random-trajectory generator with
+undefined names, stale PySWMM handles after reset, a one-step state/reward
+mismatch, competing native and external actuator ownership, and an objective
+that omits outfalls `54_B` and `65_B`. The complete audit is in
+`docs/legacy_syed_code_audit_20261021.md`.
+
 ### Same-model evidence: the public INP [66]
 
 Yin et al. (2024) say they "uploaded both SWMM model files on GitHub" [58, p. 4]. The repository (created 2023-08-08 01:41 Asia/Karachi) contains `7MPF_25yr_P1_FF.inp`, which I downloaded and parsed.

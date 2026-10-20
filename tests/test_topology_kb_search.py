@@ -28,6 +28,20 @@ def test_topology_context():
     assert d[0]["storage_down"] == ["S1"] and d[1]["storage_down"] == [] and d[1]["weirs_down"] == ["W2"]
 
 
+def test_topology_finds_direct_untreated_outfall():
+    nodes = pd.DataFrame([
+        dict(id="J", storage=False, junction=True),
+        dict(id="65_B", storage=False, junction=False),
+    ])
+    links = pd.DataFrame([dict(id="G", kind="orifice", up="J", dn="65_B")])
+    ctx = gate_context(build_graph(links), nodes, links, gates=["G"],
+                       cso_weirs=[], cso_outfalls=["65_B"])
+    row = ctx.iloc[0]
+    assert row.cso_outfalls_down == "65_B"
+    assert row.feeds_cso_without_storage
+    assert to_kb_dict(ctx)[0]["cso_outfalls_down"] == ["65_B"]
+
+
 def kb():
     full = dict(J1=10.0, J2=10.0, J3=10.0, S1=20.0)
     topo = {0: dict(risk_up=["J1"], storage_down=["S1"], weirs_down=["W"]),

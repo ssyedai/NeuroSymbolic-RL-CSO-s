@@ -83,8 +83,9 @@ def _build_stack(cfg):
         # Every official v8 comparison uses identical complete four-outfall
         # volume accounting, exclusive external gate ownership, and the INP's
         # native pump interlocks. Variant flags change only their named factor.
+        kwargs.setdefault("native_pumps", True)
         return A.build_v8(
-            cfg.seed, complete_overflow=True, native_pumps=True,
+            cfg.seed, complete_overflow=True,
             input_file=cfg.inp, **kwargs)
     if v == "v8_complete":
         if theta:
@@ -114,7 +115,8 @@ def _build_stack(cfg):
     if v == "v8_notopo":
         return v8_stack(theta=theta, topology_aware=False)
     if v == "v8_10d":
-        return v8_stack(theta=theta, policy_dim=10)
+        return v8_stack(theta=theta, policy_dim=10, native_pumps=False,
+                        policy_controls_pumps=True)
     # v7 / m0 / legacy
     env, agent, kb = A.build(cfg.seed)
     if cfg.physical_rain or cfg.real_only:
@@ -231,6 +233,8 @@ def main(cfg=None):
     run_cfg = dict(asdict(cfg), git_hash=git_hash, manifest_hash=man_hash, theta_hash=theta_hash,
                    baseline_tag=config_baseline_tag,
                    effective_strict_safety_selection=strict_selection,
+                   effective_native_pumps=cfg.variant != "v8_10d",
+                   effective_policy_controls_pumps=cfg.variant == "v8_10d",
                    python_version=platform.python_version(), lib_versions=versions)
     (run / "run_config.json").write_text(json.dumps(run_cfg, indent=1, default=str))
     (run / "storm_manifest.json").write_text(json.dumps(
@@ -256,6 +260,7 @@ def main(cfg=None):
         variant=cfg.variant, kb_version="v8-complete" if cfg.variant in V8_VARIANTS else "v7",
         theta_hash=theta_hash, manifest_hash=man_hash, baseline_tag=baseline_tag,
         action_dim=int(env.action_space.shape[0]),
+        pump_control="external policy" if cfg.variant == "v8_10d" else "INP native",
     )
 
     def record(storm):

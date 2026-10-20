@@ -25,8 +25,8 @@ def _cfg(variant):
                           rain_features=False, w_store=0.0)),
         ("v8_notopo", dict(complete_overflow=True, native_pumps=True,
                            topology_aware=False)),
-        ("v8_10d", dict(complete_overflow=True, native_pumps=True,
-                        policy_dim=10)),
+        ("v8_10d", dict(complete_overflow=True, native_pumps=False,
+                        policy_dim=10, policy_controls_pumps=True)),
     ],
 )
 def test_v8_ablation_changes_only_named_factor(monkeypatch, variant, expected):

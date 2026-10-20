@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import sys
 
 
 DEFAULT_HYDRAULIC_EVIDENCE = Path("runs/hydraulic_acceptance.json")
@@ -37,3 +38,22 @@ def assert_hydraulic_training_ready(path=DEFAULT_HYDRAULIC_EVIDENCE) -> dict:
             f"Invalid hydraulic acceptance evidence: false/missing={missing}, "
             f"difference={pct}, limit={limit}. Do not train or relax thresholds.")
     return evidence
+
+
+def main() -> int:
+    """Print a plain preflight result for people starting an experiment."""
+    try:
+        evidence = assert_hydraulic_training_ready()
+    except RuntimeError as exc:
+        print(f"BLOCKED: {exc}", file=sys.stderr)
+        return 2
+    print(
+        "PASS: hydraulic/native-control evidence accepted "
+        f"({evidence['refinement_difference_pct']:.3f}% <= "
+        f"{evidence['refinement_limit_pct']:.3f}%)."
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

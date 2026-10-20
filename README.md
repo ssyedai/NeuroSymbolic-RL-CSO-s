@@ -27,6 +27,9 @@ configuration switch. Details are in
 and [`docs/training_readiness_20261020.md`](docs/training_readiness_20261020.md).
 The exact operational information needed to resolve the gate is listed in
 [`docs/control_spec_data_request.md`](docs/control_spec_data_request.md).
+The shared Syed code, old model, rainfall files, notebook, and truncated report
+are assessed in
+[`docs/legacy_syed_code_audit_20261021.md`](docs/legacy_syed_code_audit_20261021.md).
 
 ## Installation and verification
 
@@ -46,7 +49,16 @@ python -m venv .venv
 PYTHONPATH=. .venv/bin/python -m pytest -q
 ```
 
-The current verified suite is 102 tests. The v7 golden behavior remains the
+Run the research preflight separately:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m research.readiness
+```
+
+It exits with code 2 and a plain `BLOCKED` message until valid hydraulic
+evidence exists. Do not bypass it by creating the evidence file manually.
+
+The v7 golden behavior remains the
 default; research changes are opt-in.
 
 ## Experiment sequence

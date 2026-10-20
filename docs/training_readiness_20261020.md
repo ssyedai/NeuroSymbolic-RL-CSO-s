@@ -85,7 +85,21 @@ exclusive gate ownership. Reference episodes do not write target settings.
 10. **Onset and search assumptions (guarded/fixed).** Onset now evaluates the
     full dose grid and stops on non-monotone CSO response. Controllability and
     rule calibration use complete cubic-metre accounting and safety-first
-    ranking; infeasible schedules cannot establish controllability.
+   ranking; infeasible schedules cannot establish controllability.
+
+11. **Storage availability above an overflow crest (fixed).** The complete
+    controller previously used full-depth storage capacity in its symbolic
+    state and per-gate shield. In this model, only about 34.5% of that total
+    volume lies below the first overflow crests. The complete controller now
+    uses per-unit and total usable capacity below those crests, while retaining
+    the full-depth ratio as a separately named diagnostic.
+
+12. **Inactive outputs in the 10-actuator ablation (fixed).** The 10-D agent
+    previously learned three pump outputs that were forced to one and never
+    applied while native pump rules remained active. The labelled 10-D ablation
+    now removes native actuator rules and gives the external policy exclusive
+    ownership of all seven gates and three pumps. The primary controller remains
+    seven-dimensional and retains the native pump interlocks.
 
 ## Prioritized experiment plan
 
