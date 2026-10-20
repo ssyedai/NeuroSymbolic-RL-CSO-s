@@ -55,10 +55,23 @@ def append_row(path: Path, row: dict):
     pd.DataFrame([ordered], columns=cols).to_csv(path, mode="a", header=False, index=False)
 
 
-def _load_theta(path):
+def _load_theta(path, exploratory=False, require_metadata=False):
     if not path:
         return None
     blob = json.loads(Path(path).read_text())
+    if require_metadata and "theta" not in blob:
+        raise ValueError("Research theta file lacks calibration metadata")
+    if "theta" in blob:
+        if blob.get("b3_beats_b2_on_val") is not True:
+            raise ValueError("Theta file was not better than B2 on validation")
+        if exploratory:
+            if blob.get("research_status") != "exploratory_unverified_native_reference":
+                raise ValueError("Exploratory training requires exploratory theta evidence")
+        else:
+            if blob.get("full_protocol_budget") is not True:
+                raise ValueError("Official training requires full-budget theta calibration")
+            if blob.get("research_status") != "official_hydraulic_gate_passed":
+                raise ValueError("Official training cannot use exploratory theta evidence")
     return blob.get("theta", blob)
 
 
@@ -77,8 +90,10 @@ def _load_controllable(path="runs/controllability.csv"):
 
 
 def _build_stack(cfg):
-    theta = _load_theta(cfg.theta_path)
     v = cfg.variant
+    theta = _load_theta(
+        cfg.theta_path, getattr(cfg, "exploratory", False),
+        require_metadata=v in V8_VARIANTS)
     def v8_stack(**kwargs):
         # Every official v8 comparison uses identical complete four-outfall
         # volume accounting, exclusive external gate ownership, and the INP's
@@ -130,9 +145,13 @@ def _v8_selection(vdf: pd.DataFrame) -> float:
 
 def main(cfg=None):
     cfg = cfg or parse_args()
+    experiment = dict(research_status="legacy", exploratory=False,
+                      hydraulic_gate_passed=None)
     if cfg.variant in V8_VARIANTS:
-        from research.readiness import assert_hydraulic_training_ready
-        assert_hydraulic_training_ready()
+        from research.readiness import experiment_status
+        experiment = experiment_status(cfg.exploratory)
+        if cfg.exploratory and not cfg.run_name.startswith("exploratory_"):
+            raise ValueError("Exploratory v8 run names must start with 'exploratory_'")
     run = Path(cfg.out_dir) / cfg.run_name
     if (run / "train_log.csv").exists() and not cfg.resume:
         raise ValueError("Run already contains training results; choose a new run name or resume explicitly")
@@ -175,7 +194,9 @@ def main(cfg=None):
             else:
                 raise
     if cfg.variant in V8_VARIANTS:
-        assert_v8_scenario_manifest(cfg.rain_dir, cfg.data_manifest)
+        assert_v8_scenario_manifest(
+            cfg.rain_dir, cfg.data_manifest,
+            allow_exploratory=cfg.exploratory)
     if cfg.train_ids:
         storms = [s.with_split("train" if s.storm_id in cfg.train_ids else "test") for s in storms]
         split_info["selection_on_train"] = True
@@ -185,7 +206,11 @@ def main(cfg=None):
     # G2 eligibility is rung-level (summary.json). Do NOT use the stratified
     # per-storm controllability sample as a whitelist — that shrinks the pool incorrectly.
     from .diet import load_uncontrollable_rungs
-    bad_rungs = load_uncontrollable_rungs()
+    controllability_summary = cfg.controllability_summary
+    if controllability_summary is None and cfg.exploratory:
+        controllability_summary = "runs/exploratory/controllability.csv.summary.json"
+    bad_rungs = load_uncontrollable_rungs(
+        controllability_summary or "runs/controllability.csv.summary.json")
     if bad_rungs:
         log.info("G2 uncontrollable rungs excluded from train: %s", bad_rungs)
     train_all = [s for s in storms if s.split == "train"]
@@ -228,13 +253,15 @@ def main(cfg=None):
             versions[package] = None
     config_baseline_tag = DEFAULT_BASELINE_TAG
     if cfg.variant in V8_VARIANTS:
-        from .complete_overflow import COMPLETE_BASELINE_TAG
-        config_baseline_tag = COMPLETE_BASELINE_TAG
+        from .complete_overflow import COMPLETE_BASELINE_TAG, EXPLORATORY_BASELINE_TAG
+        config_baseline_tag = (EXPLORATORY_BASELINE_TAG if cfg.exploratory
+                               else COMPLETE_BASELINE_TAG)
     run_cfg = dict(asdict(cfg), git_hash=git_hash, manifest_hash=man_hash, theta_hash=theta_hash,
                    baseline_tag=config_baseline_tag,
                    effective_strict_safety_selection=strict_selection,
                    effective_native_pumps=cfg.variant != "v8_10d",
                    effective_policy_controls_pumps=cfg.variant == "v8_10d",
+                   **experiment,
                    python_version=platform.python_version(), lib_versions=versions)
     (run / "run_config.json").write_text(json.dumps(run_cfg, indent=1, default=str))
     (run / "storm_manifest.json").write_text(json.dumps(
@@ -249,8 +276,9 @@ def main(cfg=None):
 
     baseline_tag = DEFAULT_BASELINE_TAG
     if cfg.variant in V8_VARIANTS:
-        from .complete_overflow import COMPLETE_BASELINE_TAG
-        baseline_tag = COMPLETE_BASELINE_TAG
+        from .complete_overflow import COMPLETE_BASELINE_TAG, EXPLORATORY_BASELINE_TAG
+        baseline_tag = (EXPLORATORY_BASELINE_TAG if cfg.exploratory
+                        else COMPLETE_BASELINE_TAG)
     # This process never deserializes test references. Official test evaluation
     # has its own cache and entry point after protocol freeze.
     bstore = BaselineStore(run / "baseline_cache_trainval.json", cfg.inp,
@@ -261,6 +289,9 @@ def main(cfg=None):
         theta_hash=theta_hash, manifest_hash=man_hash, baseline_tag=baseline_tag,
         action_dim=int(env.action_space.shape[0]),
         pump_control="external policy" if cfg.variant == "v8_10d" else "INP native",
+        research_status=experiment["research_status"],
+        exploratory=bool(cfg.exploratory),
+        hydraulic_gate_passed=experiment["hydraulic_gate_passed"],
     )
 
     def record(storm):

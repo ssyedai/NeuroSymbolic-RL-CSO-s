@@ -86,10 +86,14 @@ def filter_train_pool(storms, diet, train_max_T, allow_test_only_rungs,
     return out
 
 
-def load_uncontrollable_rungs(path="runs/controllability.csv.summary.json"):
+def load_uncontrollable_rungs(path="runs/controllability.csv.summary.json",
+                              require_full_protocol=True):
     from pathlib import Path
     import json
     p = Path(path)
     if not p.exists():
         return []
-    return list(json.loads(p.read_text()).get("uncontrollable_rungs") or [])
+    summary = json.loads(p.read_text())
+    if require_full_protocol and summary.get("full_protocol_budget") is not True:
+        return []
+    return list(summary.get("uncontrollable_rungs") or [])

@@ -7,6 +7,7 @@ import sys
 
 
 DEFAULT_HYDRAULIC_EVIDENCE = Path("runs/hydraulic_acceptance.json")
+EXPLORATORY_STATUS = "exploratory_unverified_native_reference"
 
 
 def assert_hydraulic_training_ready(path=DEFAULT_HYDRAULIC_EVIDENCE) -> dict:
@@ -38,6 +39,53 @@ def assert_hydraulic_training_ready(path=DEFAULT_HYDRAULIC_EVIDENCE) -> dict:
             f"Invalid hydraulic acceptance evidence: false/missing={missing}, "
             f"difference={pct}, limit={limit}. Do not train or relax thresholds.")
     return evidence
+
+
+def experiment_status(exploratory: bool = False,
+                      path=DEFAULT_HYDRAULIC_EVIDENCE) -> dict:
+    """Require the formal gate, or return an explicit exploratory watermark.
+
+    This never creates hydraulic evidence and never changes the 1% threshold.
+    It only allows pipeline dry-runs after the user has explicitly requested an
+    exploratory experiment.
+    """
+    try:
+        evidence = assert_hydraulic_training_ready(path)
+    except RuntimeError as exc:
+        if not exploratory:
+            raise
+        status = dict(
+            research_status=EXPLORATORY_STATUS,
+            exploratory=True,
+            hydraulic_gate_passed=False,
+            hydraulic_blocker=str(exc),
+        )
+        print(
+            "WARNING: EXPLORATORY ONLY. The native reference failed the fixed "
+            "hydraulic check. Results are not valid performance evidence.",
+            file=sys.stderr,
+        )
+        return status
+    return dict(
+        research_status="official_hydraulic_gate_passed",
+        exploratory=False,
+        hydraulic_gate_passed=True,
+        hydraulic_evidence=evidence,
+    )
+
+
+def isolated_output(path, exploratory: bool, official_default: str) -> Path:
+    """Keep exploratory artifacts away from official defaults and caches."""
+    path = Path(path)
+    if not exploratory:
+        return path
+    if path == Path(official_default):
+        path = Path("runs/exploratory") / path.name
+    if "exploratory" not in {part.lower() for part in path.parts}:
+        raise ValueError(
+            f"Exploratory output must be under a directory named exploratory: {path}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def main() -> int:

@@ -5,8 +5,12 @@ import pytest
 
 from multistorm import train_multi
 from multistorm import adapters
-from research.readiness import assert_hydraulic_training_ready
+from multistorm.config import parse_args
+from multistorm.diet import load_uncontrollable_rungs
+from research.readiness import (assert_hydraulic_training_ready,
+                                experiment_status, isolated_output)
 from research.guard import assert_v8_scenario_manifest, APPROVED_ATLAS14_SHA256
+from research.run_controllability import _balanced_cap
 
 
 def _cfg(variant):
@@ -58,6 +62,63 @@ def test_hydraulic_readiness_marker_is_strict(tmp_path):
     assert assert_hydraulic_training_ready(valid)["passed"] is True
 
 
+def test_exploratory_mode_is_watermarked_and_isolated(tmp_path):
+    status = experiment_status(True, tmp_path / "missing.json")
+    assert status["exploratory"] is True
+    assert status["hydraulic_gate_passed"] is False
+    assert status["research_status"] == "exploratory_unverified_native_reference"
+    assert isolated_output("runs/onset_table.csv", True,
+                           "runs/onset_table.csv") == Path("runs/exploratory/onset_table.csv")
+    with pytest.raises(ValueError, match="directory named exploratory"):
+        isolated_output("runs/not_separate/out.csv", True, "runs/onset_table.csv")
+
+
+def test_exploratory_controllability_summary_can_be_selected():
+    cfg = parse_args([
+        "--exploratory",
+        "--controllability-summary", "runs/exploratory/g2.json",
+    ])
+    assert cfg.exploratory is True
+    assert cfg.controllability_summary == "runs/exploratory/g2.json"
+
+
+def test_diagnostic_cap_spreads_across_rungs():
+    storms = [
+        SimpleNamespace(storm_id=f"a{i}", meta={"rung": "C1"})
+        for i in range(4)
+    ] + [
+        SimpleNamespace(storm_id=f"b{i}", meta={"rung": "T10"})
+        for i in range(4)
+    ]
+    selected = _balanced_cap(storms, 2)
+    assert {s.meta["rung"] for s in selected} == {"C1", "T10"}
+
+
+def test_reduced_controllability_screen_cannot_exclude_training_rungs(tmp_path):
+    import json
+    path = tmp_path / "g2.json"
+    path.write_text(json.dumps({
+        "uncontrollable_rungs": ["T10"],
+        "full_protocol_budget": False,
+    }))
+    assert load_uncontrollable_rungs(path) == []
+    assert load_uncontrollable_rungs(path, require_full_protocol=False) == ["T10"]
+
+
+def test_theta_evidence_cannot_cross_exploratory_boundary(tmp_path):
+    import json
+    path = tmp_path / "theta.json"
+    path.write_text(json.dumps({
+        "theta": {"theta_f": 0.9},
+        "b3_beats_b2_on_val": True,
+        "full_protocol_budget": False,
+        "research_status": "exploratory_unverified_native_reference",
+    }))
+    assert train_multi._load_theta(path, exploratory=True)["theta_f"] == 0.9
+    with pytest.raises(ValueError, match="full-budget"):
+        train_multi._load_theta(path, exploratory=False)
+
+
 def test_static_baseline_cannot_leak_projection_state():
     class FakeEnv:
         use_projection = True
@@ -98,3 +159,8 @@ def test_v8_manifest_rejects_stale_or_unapproved_extremes(tmp_path):
     base["evidence"]["atlas_sha256"] = APPROVED_ATLAS14_SHA256
     path.write_text(json.dumps(base))
     assert assert_v8_scenario_manifest(tmp_path)["schema_version"] == 2
+    base["research_status"] = "exploratory_unverified_native_reference"
+    path.write_text(json.dumps(base))
+    with pytest.raises(RuntimeError, match="exploratory_catalog_not_allowed"):
+        assert_v8_scenario_manifest(tmp_path)
+    assert assert_v8_scenario_manifest(tmp_path, allow_exploratory=True)["schema_version"] == 2

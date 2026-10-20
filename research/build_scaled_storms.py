@@ -56,10 +56,15 @@ def main(argv=None):
     ap.add_argument("--flat-factors", default="", help="e.g. 2 -> family F (flat multiplier) for the D1 ablation diet")
     ap.add_argument("--max-spread", type=float, default=10.0, help="max ratio between T_eq at 1h/6h/24h after scaling")
     ap.add_argument("--min-R-anchor-mm", type=float, default=15.0, help="min 6h depth for unscaled family R")
+    ap.add_argument("--exploratory", action="store_true",
+                    help="Build a separately labelled catalog from exploratory onset evidence")
     a = ap.parse_args(argv)
     ints = lambda s: [int(x) for x in s.split(",") if x]
     flts = lambda s: [float(x) for x in s.split(",") if x]
-    out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
+    out = Path(a.out)
+    if a.exploratory and "exploratory" not in {part.lower() for part in out.parts}:
+        raise ValueError("Exploratory scenarios must be under a directory named exploratory")
+    out.mkdir(parents=True, exist_ok=True)
 
     parents = load_parents(a.rain_dir, a.events, a.min_year)
     splits = S.assign_parent_splits(parents, ints(a.val_years), ints(a.test_years))
@@ -73,9 +78,22 @@ def main(argv=None):
             raise RuntimeError("Onset table predates complete four-outfall m3 accounting")
         if not o.volume_units.eq("m3").all() or not o.complete_four_outfall_objective.eq(True).all():
             raise RuntimeError("Onset table does not use the complete four-outfall m3 objective")
+        onset_exploratory = o.get("research_status", pd.Series(index=o.index, dtype=object)).eq(
+            "exploratory_unverified_native_reference").all()
+        if onset_exploratory != bool(a.exploratory):
+            raise RuntimeError(
+                "Exploratory onset evidence and --exploratory must be used together")
         summary_path = Path(str(a.onset) + ".summary.json")
-        if summary_path.exists() and not json.loads(summary_path.read_text()).get("G1_pass", False):
-            raise RuntimeError("Onset table failed G1")
+        if not summary_path.exists():
+            raise RuntimeError("Onset table is incomplete: missing G1 summary")
+        onset_summary = json.loads(summary_path.read_text())
+        if (onset_summary.get("G1_pass") is not True
+                or onset_summary.get("complete_table") is not True
+                or int(onset_summary.get("n_storms", -1)) != len(o)
+                or int(onset_summary.get("n_expected_parents", -1)) != len(parents)
+                or bool(onset_summary.get("hydraulic_gate_passed"))
+                   != (not bool(a.exploratory))):
+            raise RuntimeError("Onset table is incomplete or failed G1")
         onset = {r.storm_id: (None if pd.isna(r.k_onset) else float(r.k_onset)) for r in o.itertuples()}
         onset_evidence = dict(
             onset_sha256=file_sha256(a.onset), onset_volume_units="m3",
@@ -114,6 +132,9 @@ def main(argv=None):
     (out / "data_manifest.json").write_text(json.dumps({
         "schema_version": 2,
         "objective": "complete_four_outfall_cumulative_m3",
+        "research_status": ("exploratory_unverified_native_reference" if a.exploratory
+                            else "official_hydraulic_gate_passed"),
+        "hydraulic_gate_passed": not a.exploratory,
         "storms": manifest, "params": vars(a), "evidence": evidence,
     }, indent=1, default=str))
     (out / "splits.json").write_text(json.dumps({r["variant_id"]: r["split"] for r in rows}, indent=1))

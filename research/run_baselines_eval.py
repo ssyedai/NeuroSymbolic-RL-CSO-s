@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from research.guard import assert_provenance, assert_v8_scenario_manifest
-from research.readiness import assert_hydraulic_training_ready
+from research.readiness import experiment_status, isolated_output
 
 
 def main(argv=None):
@@ -23,12 +23,18 @@ def main(argv=None):
     ap.add_argument("--max-storms", type=int, default=0)
     ap.add_argument("--splits", default="test")
     ap.add_argument("--protocol-tag", default="protocol-v1")
+    ap.add_argument("--exploratory", action="store_true")
     a = ap.parse_args(argv)
-    assert_hydraulic_training_ready()
+    status = experiment_status(a.exploratory)
+    out = isolated_output(a.out_dir, a.exploratory, "runs/baselines_tier1")
+    if a.exploratory and a.theta_path == "runs/theta.json":
+        a.theta_path = "runs/exploratory/theta.json"
 
     from multistorm import adapters as A
     from multistorm.baselines import BaselineStore
-    from multistorm.complete_overflow import CompleteOverflowKB, COMPLETE_BASELINE_TAG
+    from multistorm.complete_overflow import (CompleteOverflowKB,
+                                               COMPLETE_BASELINE_TAG,
+                                               EXPLORATORY_BASELINE_TAG)
     from multistorm.evaluate_checkpoint import _protocol_commit
     from multistorm.evaluate import evaluate
     from multistorm.kb_v8 import DEFAULT_THETA
@@ -47,7 +53,7 @@ def main(argv=None):
     storms, _ = assign_splits(
         storms, manifest_path=a.split_manifest or str(Path(a.rain_dir) / "splits.json"))
     assert_provenance(storms, a.rain_dir)
-    assert_v8_scenario_manifest(a.rain_dir)
+    assert_v8_scenario_manifest(a.rain_dir, allow_exploratory=a.exploratory)
     pool = [s for s in storms if s.split in want]
     if a.max_storms:
         pool = pool[: a.max_storms]
@@ -60,13 +66,13 @@ def main(argv=None):
         theta_blob = json.loads(Path(a.theta_path).read_text())
         theta = theta_blob.get("theta")
 
-    out = Path(a.out_dir)
     out.mkdir(parents=True, exist_ok=True)
 
     env, _, _ = A.build_v8(0, complete_overflow=True, native_pumps=True)
     bstore = BaselineStore(out / "baseline_cache.json", "7MPF_CSO_08.inp",
                            A.calibrate_fn(env), A.static_fn(env), A.native_fn(env),
-                           tag=COMPLETE_BASELINE_TAG)
+                           tag=(EXPLORATORY_BASELINE_TAG if a.exploratory
+                                else COMPLETE_BASELINE_TAG))
 
     class _Const:
         def __init__(self, a):
@@ -88,6 +94,8 @@ def main(argv=None):
         elif name == "b3":
             if theta is None or not theta_blob.get("b3_beats_b2_on_val", False):
                 raise RuntimeError("B3 requires a validation-approved runs/theta.json")
+            if not a.exploratory and theta_blob.get("full_protocol_budget") is not True:
+                raise RuntimeError("Official B3 requires a full-budget theta calibration")
             env.kb = CompleteOverflowKB(full, list(nodes[nodes.junction].id), topo, theta=theta)
             env.use_projection = True
             agent = _Const(np.full(7, 0.5))
@@ -106,7 +114,10 @@ def main(argv=None):
                                  T_anchor=(st.meta or {}).get("T_anchor"),
                                  parent=(st.meta or {}).get("parent", st.storm_id),
                                  **n, **enrich(n, n)))
-            pd.DataFrame(rows).to_csv(out / f"{name}_eval.csv", index=False)
+            frame = pd.DataFrame(rows)
+            frame["research_status"] = status["research_status"]
+            frame["hydraulic_gate_passed"] = status["hydraulic_gate_passed"]
+            frame.to_csv(out / f"{name}_eval.csv", index=False)
             print(f"wrote {name}", len(rows), flush=True)
             continue
         else:
@@ -114,6 +125,8 @@ def main(argv=None):
 
         print(f"evaluating {name} on {len(pool)} storms...", flush=True)
         df = evaluate(agent, env, pool, bstore, name, None)
+        df["research_status"] = status["research_status"]
+        df["hydraulic_gate_passed"] = status["hydraulic_gate_passed"]
         df.to_csv(out / f"{name}_eval.csv", index=False)
         print(f"wrote {name}", len(df), flush=True)
 

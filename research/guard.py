@@ -48,7 +48,8 @@ def assert_real_only(storms, rain_dir="data/useful/rain_real",
     )
 
 
-def assert_v8_scenario_manifest(rain_dir, manifest_path=None) -> dict:
+def assert_v8_scenario_manifest(rain_dir, manifest_path=None,
+                                allow_exploratory=False) -> dict:
     """Reject stale two-outfall/onset or unverified extreme-rain catalogs."""
     path = Path(manifest_path or Path(rain_dir) / "data_manifest.json")
     if not path.is_file():
@@ -59,6 +60,9 @@ def assert_v8_scenario_manifest(rain_dir, manifest_path=None) -> dict:
         failures.append("schema_version")
     if blob.get("objective") != "complete_four_outfall_cumulative_m3":
         failures.append("objective")
+    is_exploratory = blob.get("research_status") == "exploratory_unverified_native_reference"
+    if is_exploratory and not allow_exploratory:
+        failures.append("exploratory_catalog_not_allowed")
     evidence = blob.get("evidence") or {}
     if evidence.get("onset_volume_units") != "m3":
         failures.append("onset_volume_units")

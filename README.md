@@ -61,6 +61,35 @@ evidence exists. Do not bypass it by creating the evidence file manually.
 The v7 golden behavior remains the
 default; research changes are opt-in.
 
+## Explicit exploratory workflow
+
+The repository can run an isolated exploratory pipeline while the hydraulic
+gate is unresolved. This is useful for checking code, runtime, and data flow;
+it is **not** evidence that a controller improves the real system. Exploratory
+files carry `research_status=exploratory_unverified_native_reference` and
+`hydraulic_gate_passed=false`, use a separate baseline-cache tag, stay under
+directories named `exploratory`, and cannot be loaded by official commands.
+The fixed safety and validation limits are not changed.
+
+Run the short end-to-end check in Windows PowerShell:
+
+```powershell
+.\scripts\run_exploratory_pipeline.ps1 -Mode smoke
+```
+
+After the smoke run is sound, the same entry point can execute the full
+train/validation preprocessing screens and the 300-episode one-seed pilot:
+
+```powershell
+.\scripts\run_exploratory_pipeline.ps1 -Mode full `
+  -RunName exploratory_v8_pilot_s0
+```
+
+Neither command evaluates test storms. Formal test evaluation, multi-seed
+claims, and protocol freezing remain blocked until the native hydraulic gate
+passes. The full mode is computationally expensive because hindsight search
+runs hundreds of SWMM episodes per train/validation storm.
+
 ## Experiment sequence
 
 After the hydraulic gate is independently passed without changing its threshold:

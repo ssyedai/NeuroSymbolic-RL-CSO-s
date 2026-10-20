@@ -10,7 +10,25 @@ import pandas as pd
 
 from research.controllability import cma_search, static_search
 from research.guard import assert_provenance, assert_v8_scenario_manifest
-from research.readiness import assert_hydraulic_training_ready
+from research.readiness import experiment_status, isolated_output
+
+
+def _balanced_cap(storms, limit):
+    """Deterministically spread a diagnostic cap across severity rungs."""
+    if not limit or len(storms) <= limit:
+        return list(storms)
+    groups = {}
+    for storm in sorted(storms, key=lambda s: s.storm_id):
+        key = str((storm.meta or {}).get("rung", "unknown"))
+        groups.setdefault(key, []).append(storm)
+    chosen = []
+    while len(chosen) < limit and groups:
+        for key in sorted(list(groups)):
+            if groups[key] and len(chosen) < limit:
+                chosen.append(groups[key].pop(0))
+            if not groups[key]:
+                del groups[key]
+    return chosen
 
 
 def make_evaluate_fn(env, bstore):
@@ -49,12 +67,35 @@ def main(argv=None):
     ap.add_argument("--cma-iters", type=int, default=25)
     ap.add_argument("--cma-pop", type=int, default=12)
     ap.add_argument("--skip-cma", action="store_true")
+    ap.add_argument("--exploratory", action="store_true")
     a = ap.parse_args(argv)
-    assert_hydraulic_training_ready()
+    status = experiment_status(a.exploratory)
+    out = isolated_output(a.out, a.exploratory, "runs/controllability.csv")
+    cache = isolated_output(a.cache, a.exploratory, "runs/baseline_cache.json")
+    full_budget = bool(not a.max_storms and a.static_n == 64
+                       and a.cma_iters == 25 and a.cma_pop == 12
+                       and not a.skip_cma)
+    run_config = dict(
+        research_status=status["research_status"], rain_dir=str(Path(a.rain_dir)),
+        split_manifest=str(Path(a.split_manifest) if a.split_manifest else
+                           Path(a.rain_dir) / "splits.json"),
+        max_storms=a.max_storms, static_n=a.static_n,
+        cma_iters=a.cma_iters, cma_pop=a.cma_pop,
+        skip_cma=bool(a.skip_cma), full_protocol_budget=full_budget,
+    )
+    run_config_path = Path(str(out) + ".run_config.json")
+    if out.exists():
+        if not run_config_path.exists():
+            raise RuntimeError("Existing controllability output has no search-budget record")
+        if json.loads(run_config_path.read_text()) != run_config:
+            raise RuntimeError(
+                "Existing controllability output used a different search budget or catalog")
+    else:
+        run_config_path.write_text(json.dumps(run_config, indent=1))
 
     from multistorm import adapters as A
     from multistorm.baselines import BaselineStore
-    from multistorm.complete_overflow import COMPLETE_BASELINE_TAG
+    from multistorm.complete_overflow import COMPLETE_BASELINE_TAG, EXPLORATORY_BASELINE_TAG
     from multistorm.storms import assign_splits, load_storms
 
     split_path = Path(a.split_manifest or Path(a.rain_dir) / "splits.json")
@@ -64,25 +105,28 @@ def main(argv=None):
     storms, _ = assign_splits(storms, manifest_path=a.split_manifest or
                               str(Path(a.rain_dir) / "splits.json"))
     assert_provenance(storms, a.rain_dir)
-    assert_v8_scenario_manifest(a.rain_dir)
+    assert_v8_scenario_manifest(a.rain_dir, allow_exploratory=a.exploratory)
     pool = [s for s in storms if s.split in ("train", "val")]
     if a.max_storms:
-        pool = pool[: a.max_storms]
+        pool = _balanced_cap(pool, a.max_storms)
 
     env, _, _ = A.build_v8(0, complete_overflow=True, native_pumps=True,
                            input_file="7MPF_CSO_08.inp")
-    bstore = BaselineStore(a.cache, "7MPF_CSO_08.inp",
+    bstore = BaselineStore(cache, "7MPF_CSO_08.inp",
                            A.calibrate_fn(env), A.static_fn(env), A.native_fn(env),
-                           tag=COMPLETE_BASELINE_TAG)
+                           tag=(EXPLORATORY_BASELINE_TAG if a.exploratory
+                                else COMPLETE_BASELINE_TAG))
     evaluate_fn = make_evaluate_fn(env, bstore)
 
     rows = []
-    out = Path(a.out)
     if out.exists():
         prev = pd.read_csv(out)
         required = {"safety_first", "complete_four_outfall_objective", "hind_feasible"}
         if not required <= set(prev.columns):
             raise RuntimeError("Existing controllability output uses an obsolete objective")
+        if not prev.get("research_status", pd.Series(index=prev.index, dtype=object)).eq(
+                status["research_status"]).all():
+            raise RuntimeError("Existing controllability output has a different research status")
         done = set(prev["storm_id"])
         rows = prev.to_dict("records")
         pool = [s for s in pool if s.storm_id not in done]
@@ -133,6 +177,8 @@ def main(argv=None):
             best_static_proj_cso=float(s_proj["cso_total"]),
             best_params_json=json.dumps(np.asarray(best_params).tolist()),
             safety_first=True, complete_four_outfall_objective=True,
+            research_status=status["research_status"],
+            hydraulic_gate_passed=status["hydraulic_gate_passed"],
             uncontrollable=bool(not np.isfinite(ach_h) or ach_h < 5.0),
         ))
         pd.DataFrame(rows).to_csv(out, index=False)
@@ -148,10 +194,20 @@ def main(argv=None):
             n_storms=len(df), splits=sorted(df.split.unique().tolist()),
             median_achievable_pct_hind={str(k): float(v) for k, v in medians.items()},
             uncontrollable_rungs=uncontrollable, g2_failed_rungs=gate_fail,
-            g2_pass=not gate_fail, safety_first=True,
+            sample_threshold_pass=not gate_fail,
+            g2_pass=bool(full_budget and not gate_fail), safety_first=True,
+            diagnostic_budget=dict(max_storms=a.max_storms, static_n=a.static_n,
+                                   cma_iters=a.cma_iters, cma_pop=a.cma_pop,
+                                   skip_cma=bool(a.skip_cma)),
+            full_protocol_budget=full_budget,
+            research_status=status["research_status"],
+            hydraulic_gate_passed=status["hydraulic_gate_passed"],
         )
         Path(str(out) + ".summary.json").write_text(json.dumps(summary, indent=1))
-        if gate_fail:
+        if not full_budget and not a.exploratory:
+            env.close()
+            raise RuntimeError("Official G2 requires the complete search budget")
+        if gate_fail and not a.exploratory:
             env.close()
             raise RuntimeError(f"G2 failed for rungs {gate_fail}; stop without training")
     env.close()

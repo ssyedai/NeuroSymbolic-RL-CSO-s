@@ -16,6 +16,7 @@ FT3_TO_M3 = 0.028316846592
 CSO_OUTFALLS = ("54", "65", "54_B", "65_B")
 TREATED_OUTFALLS = ("JCT-2112", "JCT-3090")
 COMPLETE_BASELINE_TAG = "v6|physrain|nativefix|all4outfalls|gross_outward|nodeflood|external_control|72h"
+EXPLORATORY_BASELINE_TAG = COMPLETE_BASELINE_TAG + "|exploratory|native_step_sensitive"
 
 
 def storage_capacities(inp):

@@ -94,6 +94,13 @@ def test_build_cli_end_to_end(tmp_path):
         volume_units=["m3"] * 4,
         complete_four_outfall_objective=[True] * 4,
     )).to_csv(tmp_path / "onset.csv", index=False)
+    (tmp_path / "onset.csv.summary.json").write_text(json.dumps({
+        "n_storms": 4,
+        "n_expected_parents": 4,
+        "complete_table": True,
+        "hydraulic_gate_passed": True,
+        "G1_pass": True,
+    }))
     out = tmp_path / "out"
     df, rej = B.main(["--rain-dir", str(rain), "--events", str(tmp_path / "events.csv"), "--out", str(out),
                       "--onset", str(tmp_path / "onset.csv"), "--val-years", "2019", "--test-years", "2024",

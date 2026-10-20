@@ -44,10 +44,12 @@ class MultiStormConfig:
     primary_observed_only: bool = False
     updates_per_step: float = 0.25
     theta_path: Optional[str] = None
+    controllability_summary: Optional[str] = None
     eager_baselines: bool = False
     max_val_eval: int = 0
     strict_safety_selection: bool = False
     evaluate_test: bool = False
+    exploratory: bool = False
 
 
 def _parse_float_list(s: str) -> List[float]:
@@ -107,6 +109,10 @@ def parse_args(argv=None) -> MultiStormConfig:
     p.add_argument("--primary-observed-only", action="store_true", default=False)
     p.add_argument("--updates-per-step", type=float, default=0.25)
     p.add_argument("--theta-path", default=None)
+    p.add_argument(
+        "--controllability-summary", default=None,
+        help="Optional G2 summary JSON; exploratory runs must not reuse official results",
+    )
     p.add_argument("--eager-baselines", action="store_true", default=False)
     p.add_argument("--max-val-eval", type=int, default=0,
                    help="Cap validation storms used for mid-training selection (0=all)")
@@ -114,6 +120,8 @@ def parse_args(argv=None) -> MultiStormConfig:
                    help="Reject checkpoints that fail safety, including zero-when-feasible")
     p.add_argument("--evaluate-test", action="store_true",
                    help="Explicitly enable test evaluation after protocol freeze")
+    p.add_argument("--exploratory", action="store_true",
+                   help="Run with an explicit unverified-native-reference watermark")
     a = p.parse_args(argv)
     if a.diet == "D3_ladder1000":
         a.train_max_T = max(a.train_max_T, 1000.0)
@@ -138,8 +146,10 @@ def parse_args(argv=None) -> MultiStormConfig:
         primary_observed_only=a.primary_observed_only,
         updates_per_step=a.updates_per_step,
         theta_path=a.theta_path,
+        controllability_summary=a.controllability_summary,
         eager_baselines=a.eager_baselines,
         max_val_eval=a.max_val_eval,
         strict_safety_selection=a.strict_safety_selection,
         evaluate_test=a.evaluate_test,
+        exploratory=a.exploratory,
     )
