@@ -25,6 +25,8 @@ Do not create `runs/hydraulic_acceptance.json` manually. It is evidence, not a
 configuration switch. Details are in
 [`docs/coupled_endpoint_verification_20261020.md`](docs/coupled_endpoint_verification_20261020.md)
 and [`docs/training_readiness_20261020.md`](docs/training_readiness_20261020.md).
+The exact operational information needed to resolve the gate is listed in
+[`docs/control_spec_data_request.md`](docs/control_spec_data_request.md).
 
 ## Installation and verification
 
