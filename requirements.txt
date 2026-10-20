@@ -1,0 +1,12 @@
+pytest
+numpy
+pandas
+torch
+gymnasium
+pyswmm
+swmm-toolkit
+matplotlib
+openpyxl
+networkx
+cma
+scipy

@@ -1,0 +1,14 @@
+# Direct versions tested on Windows / Python 3.11 during the 2026-10-10 audit.
+# Separate environment; do not replace the historical Linux run environment.
+numpy==1.26.4
+pandas==2.2.2
+torch==2.2.2
+gymnasium==1.4.0
+pyswmm==2.2.0
+swmm-toolkit==0.17.0
+matplotlib==3.10.8
+openpyxl==3.1.5
+networkx==3.6.1
+cma==4.5.0
+scipy==1.15.3
+pytest==9.1.1

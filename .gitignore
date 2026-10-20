@@ -1,0 +1,27 @@
+.venv/
+.venv-win/
+__pycache__/
+*.pyc
+.pytest_cache/
+runs/
+checkpoints_v7/
+*.pt
+training_v7.png
+.DS_Store
+.coverage
+htmlcov/
+*.egg-info/
+files.zip
+
+# Hydraulic-model and rainfall assets remain local unless their owner explicitly
+# authorizes publication. Source, tests, and documentation are versioned.
+data/
+old_code/
+*.inp
+atlas14_mm.csv
+configs/*.csv
+configs/*.json
+
+# SWMM runtime side products
+*.out
+*.rpt

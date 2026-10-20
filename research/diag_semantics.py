@@ -1,0 +1,60 @@
+"""Run FIRST. Answers: what are nodes 54/54_B/65/65_B? is 'storage fill' rain-dependent? is native mode native? which units?"""
+import re
+import numpy as np
+import pandas as pd
+from pyswmm import Simulation, Nodes, Links
+from multistorm import adapters as A
+from multistorm.storms import load_storms, Storm
+
+INP = "7MPF_CSO_08.inp"
+WATCH = ["54", "54_B", "65", "65_B", "JCT-2114", "JCT-3090"]
+GATES = ["1360", "1360_B", "35263", "35281_B", "35291_B", "3530", "3530_B"]
+
+with Simulation(INP) as sim:                                  # pyswmm API names: [VERIFY] against your version
+    nd = pd.DataFrame([dict(id=n.nodeid, outfall=n.is_outfall(), storage=n.is_storage(), junction=n.is_junction(),
+                            full_depth=n.full_depth) for n in Nodes(sim)])
+    rows = []
+    for l in Links(sim):
+        up, dn = l.connections
+        kind = ("orifice" if l.is_orifice() else "weir" if l.is_weir() else "pump" if l.is_pump()
+                else "outlet" if l.is_outlet() else "conduit")
+        rows.append(dict(id=l.linkid, kind=kind, up=up, dn=dn))
+    lk = pd.DataFrame(rows)
+    sim.start()
+    init_settings = {g: Links(sim)[g].target_setting for g in GATES}
+nd.to_csv("runs/diag_nodes.csv", index=False); lk.to_csv("runs/diag_links.csv", index=False)
+print(nd[nd.id.isin(WATCH)].to_string()); print("node types:", nd[["outfall", "storage", "junction"]].sum().to_dict())
+print(lk[lk.kind.isin(["orifice", "weir", "pump", "outlet"])].to_string())
+txt = open(INP).read()
+print(re.findall(r"FLOW_UNITS\s+\w+", txt)); print(re.search(r"\[RAINGAGES\][\s\S]{0,500}", txt).group(0))
+print("INP-native initial gate settings:", init_settings)
+
+from pathlib import Path
+_RAIN = next((p for p in ("rain_real_full", "data/useful/rain_real_full")
+              if Path(p).is_dir()), "data/useful/rain_real_full")
+env, agent, kb = A.build(0)
+storms = load_storms(_RAIN, scaling="none")
+wet = max(storms, key=lambda s: s.depth.sum())
+dry = Storm("dry", "diag", np.zeros(288), np.zeros(288), "test", {"scaling": "none"})
+big = Storm("wet_x3", "diag", wet.intensity * 3, wet.depth * 3, "test", {"scaling": "none"})
+print(f"diag rain dir: {_RAIN}  (n_storms={len(storms)}, wet={wet.storm_id})")
+
+
+def run(storm, native=False):
+    env.reset(options={"storm": storm, "baseline_flooding": 0.0, "physical_rain": True, "native": native})
+    d = {n: [] for n in WATCH}; first = None; done = False
+    while not done:
+        _, _, term, trunc, _ = env.step(np.full(10, 0.5))
+        for n in WATCH:
+            d[n].append(env._node_obj[n].depth)
+        if first is None:
+            first = {g: getattr(env, "O" + g).target_setting for g in ["1360", "1360_B"]}
+        done = bool(term or trunc)
+    return pd.DataFrame(d), first
+
+
+d0, f_non = run(dry); d1, _ = run(wet); d3, _ = run(big)
+print("max |depth(wet)-depth(dry)|:\n", (d1 - d0).abs().max().round(4).to_string())
+print("max |depth(x3)-depth(dry)|:\n", (d3 - d0).abs().max().round(4).to_string())
+_, f_nat = run(wet, native=True)
+print("initial gate settings: non-native", f_non, "| native-mode", f_nat, "| INP-native", init_settings)
