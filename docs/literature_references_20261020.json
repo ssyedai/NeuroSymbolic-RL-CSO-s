@@ -1,0 +1,806 @@
+[
+ {
+  "id": "1",
+  "citation": "Rossman, L.A. (2017). *Storm Water Management Model Reference Manual Volume II – Hydraulics*. EPA/600/R-17/111. https://nepis.epa.gov/Exe/ZyPURL.cgi?Dockey=P100S9AS.TXT (mirror read: https://downloads.tuflow.com/SWMM/SWMM5_Reference_Manual_Volume2_Hydaulics_P100S9AS.pdf). Open.",
+  "doi": null,
+  "urls": [
+   "https://nepis.epa.gov/Exe/ZyPURL.cgi?Dockey=P100S9AS.TXT",
+   "https://downloads.tuflow.com/SWMM/SWMM5_Reference_Manual_Volume2_Hydaulics_P100S9AS.pdf"
+  ],
+  "verified": "FT, pages located via pdftotext.",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "2",
+  "citation": "Rossman, L.A., & Simon, M.A. (2022). *Storm Water Management Model User's Manual Version 5.2*. EPA/600/R-22/030. https://www.epa.gov/system/files/documents/2022-04/swmm-users-manual-version-5.2.pdf (read via https://cfpub.epa.gov/si/si_public_file_download.cfm?Lab=CESER&p_download_id=544334). Open.",
+  "doi": null,
+  "urls": [
+   "https://www.epa.gov/system/files/documents/2022-04/swmm-users-manual-version-5.2.pdf",
+   "https://cfpub.epa.gov/si/si_public_file_download.cfm?Lab=CESER&p_download_id=544334"
+  ],
+  "verified": "FT.",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "3",
+  "citation": "US EPA (2022). *SWMM 5.2 Update History* (5.2.0 updates and bug fixes, item 11). https://cfpub.epa.gov/si/si_public_file_download.cfm?Lab=CESER&p_download_id=544332. Open.",
+  "doi": null,
+  "urls": [
+   "https://cfpub.epa.gov/si/si_public_file_download.cfm?Lab=CESER&p_download_id=544332"
+  ],
+  "verified": "FT.",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "4",
+  "citation": "US EPA. *Stormwater-Management-Model source code* (`src/solver/routing.c`, `project.c`, `link.c`, `controls.c`; tags v5.1.13, v5.2.0, master). https://github.com/USEPA/Stormwater-Management-Model. Open.",
+  "doi": null,
+  "urls": [
+   "https://github.com/USEPA/Stormwater-Management-Model"
+  ],
+  "verified": "CODE.",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "5",
+  "citation": "Rossman, L.A. (2006). *Storm Water Management Model Quality Assurance Report: Dynamic Wave Flow Routing*. EPA/600/R-06/097. https://nepis.epa.gov/Exe/ZyPURL.cgi?Dockey=P10089TF.TXT. Open.",
+  "doi": null,
+  "urls": [
+   "https://nepis.epa.gov/Exe/ZyPURL.cgi?Dockey=P10089TF.TXT"
+  ],
+  "verified": "MD (NEPIS listing via search).",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "6",
+  "citation": "Pachaly, R.L., Vasconcelos, J.G., Allasia, D.G., Tassi, R., & Bocchi, J.P.P. (2020). Comparing SWMM 5.1 calculation alternatives to represent unsteady stormwater sewer flows. *J. Hydraulic Engineering* 146(7), 04020046. https://doi.org/10.1061/(ASCE)HY.1943-7900.0001762. Closed.",
+  "doi": "10.1061/(ASCE)HY.1943-7900.0001762",
+  "urls": [
+   "https://doi.org/10.1061/(ASCE"
+  ],
+  "verified": "Crossref + AB (OpenAlex).",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "9",
+  "citation": "McDonnell, B.E., Ratliff, K., Tryby, M.E., Wu, J.J.X., & Mullapudi, A. (2020). PySWMM: The Python Interface to Stormwater Management Model (SWMM). *JOSS* 5(52), 2292. https://doi.org/10.21105/joss.02292; `step_advance` in https://github.com/pyswmm/pyswmm. Open.",
+  "doi": "10.21105/joss.02292",
+  "urls": [
+   "https://doi.org/10.21105/joss.02292",
+   "https://github.com/pyswmm/pyswmm"
+  ],
+  "verified": "Crossref + FT (PDF) + CODE.",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "10",
+  "citation": "Riaño-Briceño, G., Barreiro-Gomez, J., Ramirez-Jaime, A., Quijano, N., & Ocampo-Martinez, C. (2016). MatSWMM – An open-source toolbox for designing real-time control of urban drainage systems. *Environ. Model. Softw.* 83, 143–154. https://doi.org/10.1016/j.envsoft.2016.05.009. Green OA.",
+  "doi": "10.1016/j.envsoft.2016.05.009",
+  "urls": [
+   "https://doi.org/10.1016/j.envsoft.2016.05.009"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "11",
+  "citation": "Filippov, A.F. (1988). *Differential Equations with Discontinuous Righthand Sides*. Kluwer (Mathematics and Its Applications). https://doi.org/10.1007/978-94-015-7793-9. Closed.",
+  "doi": "10.1007/978-94-015-7793-9",
+  "urls": [
+   "https://doi.org/10.1007/978-94-015-7793-9"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "12",
+  "citation": "Utkin, V. (1977). Variable structure systems with sliding modes. *IEEE Trans. Automatic Control* 22(2), 212–222. https://doi.org/10.1109/TAC.1977.1101446. Closed.",
+  "doi": "10.1109/TAC.1977.1101446",
+  "urls": [
+   "https://doi.org/10.1109/TAC.1977.1101446"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "13",
+  "citation": "Johansson, K.H., Egerstedt, M., Lygeros, J., & Sastry, S. (1999). On the regularization of Zeno hybrid automata. *Systems & Control Letters* 38(3), 141–150. https://doi.org/10.1016/S0167-6911(99)00059-6 (author copy: https://kth.diva-portal.org/smash/get/diva2:495789/FULLTEXT01). Open (repository).",
+  "doi": "10.1016/S0167-6911(99)00059-6",
+  "urls": [
+   "https://doi.org/10.1016/S0167-6911(99",
+   "https://kth.diva-portal.org/smash/get/diva2:495789/FULLTEXT01"
+  ],
+  "verified": "Crossref + FT.",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "14",
+  "citation": "Zhang, J., Johansson, K.H., Lygeros, J., & Sastry, S. (2001). Zeno hybrid systems. *Int. J. Robust Nonlinear Control* 11(5), 435–451. https://doi.org/10.1002/rnc.592. Green OA.",
+  "doi": "10.1002/rnc.592",
+  "urls": [
+   "https://doi.org/10.1002/rnc.592"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "15",
+  "citation": "Goebel, R., Sanfelice, R.G., & Teel, A.R. (2009). Hybrid dynamical systems. *IEEE Control Systems Magazine* 29(2), 28–93. https://doi.org/10.1109/MCS.2008.931718. Closed.",
+  "doi": "10.1109/MCS.2008.931718",
+  "urls": [
+   "https://doi.org/10.1109/MCS.2008.931718"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "16",
+  "citation": "Liberzon, D. (2003). *Switching in Systems and Control*. Birkhäuser. https://doi.org/10.1007/978-1-4612-0017-8. Closed.",
+  "doi": "10.1007/978-1-4612-0017-8",
+  "urls": [
+   "https://doi.org/10.1007/978-1-4612-0017-8"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "17",
+  "citation": "Hespanha, J.P., & Morse, A.S. (1999). Stability of switched systems with average dwell-time. *Proc. 38th IEEE CDC*, 3, 2655–2660. https://doi.org/10.1109/CDC.1999.831330. Closed.",
+  "doi": "10.1109/CDC.1999.831330",
+  "urls": [
+   "https://doi.org/10.1109/CDC.1999.831330"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "18",
+  "citation": "Hespanha, J.P., Liberzon, D., & Morse, A.S. (2003). Hysteresis-based switching algorithms for supervisory control of uncertain systems. *Automatica* 39(2), 263–272. https://doi.org/10.1016/S0005-1098(02)00241-8. Green OA.",
+  "doi": "10.1016/S0005-1098(02)00241-8",
+  "urls": [
+   "https://doi.org/10.1016/S0005-1098(02"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "19",
+  "citation": "Shampine, L.F., & Thompson, S. (2000). Event location for ordinary differential equations. *Computers & Mathematics with Applications* 39(5–6), 43–54. https://doi.org/10.1016/S0898-1221(00)00045-6. Bronze OA.",
+  "doi": "10.1016/S0898-1221(00)00045-6",
+  "urls": [
+   "https://doi.org/10.1016/S0898-1221(00"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "20",
+  "citation": "Park, T., & Barton, P.I. (1996). State event location in differential-algebraic models. *ACM TOMACS* 6(2), 137–165. https://doi.org/10.1145/232807.232809.",
+  "doi": "10.1145/232807.232809",
+  "urls": [
+   "https://doi.org/10.1145/232807.232809"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "21",
+  "citation": "Gear, C.W., & Østerby, O. (1984). Solving ordinary differential equations with discontinuities. *ACM TOMS* 10(1), 23–44. https://doi.org/10.1145/356068.356071.",
+  "doi": "10.1145/356068.356071",
+  "urls": [
+   "https://doi.org/10.1145/356068.356071"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "22",
+  "citation": "Dieci, L., & Lopez, L. (2012). A survey of numerical methods for IVPs of ODEs with discontinuous right-hand side. *J. Comput. Appl. Math.* 236(16), 3967–3991. https://doi.org/10.1016/j.cam.2012.02.011. Bronze OA.",
+  "doi": "10.1016/j.cam.2012.02.011",
+  "urls": [
+   "https://doi.org/10.1016/j.cam.2012.02.011"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "23",
+  "citation": "Mosterman, P.J. (1999). An overview of hybrid simulation phenomena and their support by simulation packages. In *Hybrid Systems: Computation and Control*, LNCS 1569, 165–177. https://doi.org/10.1007/3-540-48983-5_17. Closed.",
+  "doi": "10.1007/3-540-48983-5_17",
+  "urls": [
+   "https://doi.org/10.1007/3-540-48983-5_17"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "24",
+  "citation": "García, L., Barreiro-Gomez, J., Escobar, E., Téllez, D., Quijano, N., & Ocampo-Martinez, C. (2015). Modeling and real-time control of urban drainage systems: A review. *Adv. Water Resour.* 85, 120–132. https://doi.org/10.1016/j.advwatres.2015.08.007. Green OA.",
+  "doi": "10.1016/j.advwatres.2015.08.007",
+  "urls": [
+   "https://doi.org/10.1016/j.advwatres.2015.08.007"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "25",
+  "citation": "Lund, N.S.V., Falk, A.K.V., Borup, M., Madsen, H., & Mikkelsen, P.S. (2018). Model predictive control of urban drainage systems: A review and perspective towards smart real-time water management. *Crit. Rev. Environ. Sci. Technol.* 48(3), 279–339. https://doi.org/10.1080/10643389.2018.1455484. Bronze OA (download blocked here).",
+  "doi": "10.1080/10643389.2018.1455484",
+  "urls": [
+   "https://doi.org/10.1080/10643389.2018.1455484"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "26",
+  "citation": "Schütze, M., Campisano, A., Colas, H., Schilling, W., & Vanrolleghem, P.A. (2004). Real time control of urban wastewater systems—where do we stand today? *J. Hydrol.* 299(3–4), 335–348. https://doi.org/10.1016/j.jhydrol.2004.08.010. Closed.",
+  "doi": "10.1016/j.jhydrol.2004.08.010",
+  "urls": [
+   "https://doi.org/10.1016/j.jhydrol.2004.08.010"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "27",
+  "citation": "Mollerup, A.L., Mikkelsen, P.S., Thornberg, D., & Sin, G. (2017; online 2016). Controlling sewer systems – a critical review based on systems in three EU cities. *Urban Water J.* 14(4), 435–442. https://doi.org/10.1080/1573062X.2016.1148183. Closed.",
+  "doi": "10.1080/1573062X.2016.1148183",
+  "urls": [
+   "https://doi.org/10.1080/1573062X.2016.1148183"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "28",
+  "citation": "Kroll, S., Weemaes, M., Van Impe, J., & Willems, P. (2018). A methodology for the design of RTC strategies for combined sewer networks. *Water* 10(11), 1675. https://doi.org/10.3390/w10111675. Gold OA.",
+  "doi": "10.3390/w10111675",
+  "urls": [
+   "https://doi.org/10.3390/w10111675"
+  ],
+  "verified": "Crossref + FT.",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "29",
+  "citation": "Schütze, M., Lange, M., Pabst, M., & Haas, U. (2018). Astlingen – a benchmark for real time control (RTC). *Water Sci. Technol.* 2017(2), 552–560. https://doi.org/10.2166/wst.2018.172. Closed.",
+  "doi": "10.2166/wst.2018.172",
+  "urls": [
+   "https://doi.org/10.2166/wst.2018.172"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "30",
+  "citation": "Sun, C., Lorenz Svensen, J., Borup, M., Puig, V., Cembrano, G., & Vezzaro, L. (2020). An MPC-enabled SWMM implementation of the Astlingen RTC benchmarking network. *Water* 12(4), 1034. https://doi.org/10.3390/w12041034; model: https://github.com/open-toolbox/SWMM-Astlingen (`Astlingen_SWMM.inp`, `EFD_Control.txt`). Gold OA.",
+  "doi": "10.3390/w12041034",
+  "urls": [
+   "https://doi.org/10.3390/w12041034",
+   "https://github.com/open-toolbox/SWMM-Astlingen"
+  ],
+  "verified": "Crossref + FT + CODE/INP (commit history checked: uploaded 2020-01-08).",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "31",
+  "citation": "Saliba, S.M., Bowes, B.D., Adams, S., Beling, P.A., & Goodall, J.L. (2020). Deep reinforcement learning with uncertain data for real-time stormwater system control and flood mitigation. *Water* 12(11), 3222. https://doi.org/10.3390/w12113222. Gold OA.",
+  "doi": "10.3390/w12113222",
+  "urls": [
+   "https://doi.org/10.3390/w12113222"
+  ],
+  "verified": "Crossref + FT.",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "32",
+  "citation": "Bowes, B.D., Tavakoli, A., Wang, C., Heydarian, A., Behl, M., Beling, P.A., & Goodall, J.L. (2021; online 2020). Flood mitigation in coastal urban catchments using real-time stormwater infrastructure control and reinforcement learning. *J. Hydroinformatics* 23(3), 529–547. https://doi.org/10.2166/hydro.2020.080. Hybrid OA (download blocked here).",
+  "doi": "10.2166/hydro.2020.080",
+  "urls": [
+   "https://doi.org/10.2166/hydro.2020.080"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "33",
+  "citation": "Tian, W., Liao, Z., Zhang, Z., Wu, H., & Xin, K. (2022). Flooding and overflow mitigation using deep reinforcement learning based on Koopman operator of urban drainage systems. *Water Resour. Res.* 58(7), e2021WR030939. https://doi.org/10.1029/2021WR030939. Hybrid OA (download blocked here).",
+  "doi": "10.1029/2021WR030939",
+  "urls": [
+   "https://doi.org/10.1029/2021WR030939"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "34",
+  "citation": "Rimer, S.P., Mullapudi, A., Troutman, S.C., Ewing, G., Bowes, B.D., Akin, A.A., Sadler, J., Kertesz, R., et al. (2023). pystorms: A simulation sandbox for the development and evaluation of stormwater control algorithms. *Environ. Model. Softw.* 162, 105635. https://doi.org/10.1016/j.envsoft.2023.105635. Bronze.",
+  "doi": "10.1016/j.envsoft.2023.105635",
+  "urls": [
+   "https://doi.org/10.1016/j.envsoft.2023.105635"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "35",
+  "citation": "kLabUM. *pystorms* source code (`environment.py`, `scenarios/zeta.py`, `tutorials/rule_based_controller.py`). https://github.com/kLabUM/pystorms. Open.",
+  "doi": null,
+  "urls": [
+   "https://github.com/kLabUM/pystorms"
+  ],
+  "verified": "CODE.",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "36",
+  "citation": "Mullapudi, A., Lewis, M.J., Gruden, C.L., & Kerkez, B. (2020). Deep reinforcement learning for the real time control of stormwater systems. *Adv. Water Resour.* 140, 103600. https://doi.org/10.1016/j.advwatres.2020.103600 (author copy: https://randomstorms.net/data/papers/rl.pdf).",
+  "doi": "10.1016/j.advwatres.2020.103600",
+  "urls": [
+   "https://doi.org/10.1016/j.advwatres.2020.103600",
+   "https://randomstorms.net/data/papers/rl.pdf"
+  ],
+  "verified": "Crossref + FT (author-hosted copy).",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "37",
+  "citation": "Kerkez, B., Gruden, C., Lewis, M., Montestruque, L., Quigley, M., Wong, B., Bedig, A., Kertesz, R., et al. (2016). Smarter stormwater systems. *Environ. Sci. Technol.* 50(14), 7267–7273. https://doi.org/10.1021/acs.est.5b05870. Bronze.",
+  "doi": "10.1021/acs.est.5b05870",
+  "urls": [
+   "https://doi.org/10.1021/acs.est.5b05870"
+  ],
+  "verified": "Crossref/MD (background only).",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "38",
+  "citation": "Troutman, S.C., Love, N.G., & Kerkez, B. (2020). Balancing water quality and flows in combined sewer systems using real-time control. *Environ. Sci.: Water Res. Technol.* 6(5), 1357–1369. https://doi.org/10.1039/C9EW00882A; code: https://github.com/stroutm/LBCsewer. Closed (paper); open (code).",
+  "doi": "10.1039/C9EW00882A",
+  "urls": [
+   "https://doi.org/10.1039/C9EW00882A",
+   "https://github.com/stroutm/LBCsewer"
+  ],
+  "verified": "Crossref + CODE.",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "39",
+  "citation": "Troutman, S.C. (2020). *Coupled, Data-Driven, and Real-Time Modeling and Control of Sewer Systems and Water Resource Recovery Facilities*. PhD dissertation, University of Michigan. https://hdl.handle.net/2027.42/163069. Open (PDF behind bot check).",
+  "doi": null,
+  "urls": [
+   "https://hdl.handle.net/2027.42/163069"
+  ],
+  "verified": "AB (repository page).",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "40",
+  "citation": "Great Lakes Water Authority (2020). *Wastewater Master Plan* (Final, June 2020). https://www.glwater.org/wp-content/uploads/2020/12/Full_WWMP_Report_Final_June-2020.pdf. Open.",
+  "doi": null,
+  "urls": [
+   "https://www.glwater.org/wp-content/uploads/2020/12/Full_WWMP_Report_Final_June-2020.pdf"
+  ],
+  "verified": "FT (pp. 1-13–1-14, 3-10–3-11, 3-45, 3-49, 3-51, 5-2).",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "41",
+  "citation": "Vezzaro, L., & Grum, M. (2014). A generalised Dynamic Overflow Risk Assessment (DORA) for Real Time Control of urban drainage systems. *J. Hydrol.* 515, 292–303. https://doi.org/10.1016/j.jhydrol.2014.05.019. Closed.",
+  "doi": "10.1016/j.jhydrol.2014.05.019",
+  "urls": [
+   "https://doi.org/10.1016/j.jhydrol.2014.05.019"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "42",
+  "citation": "van der Werf, J.A., Kapelan, Z., & Langeveld, J. (2022). Towards the long term implementation of real time control of combined sewer systems: a review of performance and influencing factors. *Water Sci. Technol.* 85(4), 1295–1320. https://doi.org/10.2166/wst.2022.038. Diamond OA (download blocked here).",
+  "doi": "10.2166/wst.2022.038",
+  "urls": [
+   "https://doi.org/10.2166/wst.2022.038"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "43",
+  "citation": "Campisano, A., Cabot Ple, J., Muschalla, D., Pleau, M., & Vanrolleghem, P.A. (2013). Potential and limitations of modern equipment for real time control of urban wastewater systems. *Urban Water J.* 10(5), 300–311. https://doi.org/10.1080/1573062X.2013.763996. Closed.",
+  "doi": "10.1080/1573062X.2013.763996",
+  "urls": [
+   "https://doi.org/10.1080/1573062X.2013.763996"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "44",
+  "citation": "Schütze, M., Erbe, V., Haas, U., Scheer, M., & Weyand, M. (2008). Sewer system real-time control supported by the M180 guideline document. *Urban Water J.* 5(1), 69–78. https://doi.org/10.1080/15730620701754376. Closed.",
+  "doi": "10.1080/15730620701754376",
+  "urls": [
+   "https://doi.org/10.1080/15730620701754376"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "45",
+  "citation": "Michigan Department of Environment, Great Lakes, and Energy (2019). *NPDES Permit No. MI0022802, Great Lakes Water Authority WRRF* (issued June 28, 2019). https://www.glwater.org/wp-content/uploads/2024/04/2019-NPDES-Permit-FINAL_GLWA-WRRF.pdf. Open.",
+  "doi": null,
+  "urls": [
+   "https://www.glwater.org/wp-content/uploads/2024/04/2019-NPDES-Permit-FINAL_GLWA-WRRF.pdf"
+  ],
+  "verified": "FT (p. 16; Part I.A.15.d, pp. 37–38).",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "46",
+  "citation": "Colas, H., Pleau, M., Lamarre, J., Pelletier, G., & Lavallée, P. (2004). Practical perspective on real-time control. *Water Qual. Res. J. Canada* 39(4), 466–478. https://doi.org/10.2166/wqrj.2004.058. Bronze OA (download blocked here).",
+  "doi": "10.2166/wqrj.2004.058",
+  "urls": [
+   "https://doi.org/10.2166/wqrj.2004.058"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "47",
+  "citation": "Pleau, M., Colas, H., Lavallée, P., Pelletier, G., & Bonin, R. (2005). Global optimal real-time control of the Quebec urban drainage system. *Environ. Model. Softw.* 20(4), 401–413. https://doi.org/10.1016/j.envsoft.2004.02.009. Closed.",
+  "doi": "10.1016/j.envsoft.2004.02.009",
+  "urls": [
+   "https://doi.org/10.1016/j.envsoft.2004.02.009"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "48",
+  "citation": "Great Lakes–Upper Mississippi River Board (2014). *Recommended Standards for Wastewater Facilities* (\"Ten States Standards\"), 2014 ed., §42.62 Wet well size. https://dam.assets.ohio.gov/image/upload/epa.ohio.gov/Portals/35/pti/10wastewaterstandards-2014.pdf. Open.",
+  "doi": null,
+  "urls": [
+   "https://dam.assets.ohio.gov/image/upload/epa.ohio.gov/Portals/35/pti/10wastewaterstandards-2014.pdf"
+  ],
+  "verified": "FT (p. 40-5).",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "49",
+  "citation": "Great Lakes Water Authority (2021). *June & July Rain Events Update, as of August 25, 2021*. https://www.glwater.org/wp-content/uploads/2021/08/Rain-Events-Update-August-25-FINAL-210825.pdf. Open.",
+  "doi": null,
+  "urls": [
+   "https://www.glwater.org/wp-content/uploads/2021/08/Rain-Events-Update-August-25-FINAL-210825.pdf"
+  ],
+  "verified": "FT.",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "50",
+  "citation": "Salim, I., & McCord, D. (2025). Harnessing data for smarter wastewater management: GLWA's Interceptor Hydraulic Viewer. *Clear Waters* (trade magazine; hosted by Wade Trim). https://www.wadetrim.com/wp-content/uploads/smart-ww-mgmt-clear-waters-25.pdf. Open.",
+  "doi": null,
+  "urls": [
+   "https://www.wadetrim.com/wp-content/uploads/smart-ww-mgmt-clear-waters-25.pdf"
+  ],
+  "verified": "FT. Not peer reviewed; the year is inferred from the file name.",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "51",
+  "citation": "Ridgway, K.E., & Rabbaig, M.M. (2002). Development of inflatable dam design parameters and control schemes using the Transient Analysis Program. *Proc. WEF (WEFTEC)* 2002(9), 198–214. https://doi.org/10.2175/193864702784162552. Closed.",
+  "doi": "10.2175/193864702784162552",
+  "urls": [
+   "https://doi.org/10.2175/193864702784162552"
+  ],
+  "verified": "Crossref + AB (search snippet).",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "52",
+  "citation": "Roache, P.J. (1994). Perspective: A method for uniform reporting of grid refinement studies. *J. Fluids Eng.* 116(3), 405–413. https://doi.org/10.1115/1.2910291. Closed.",
+  "doi": "10.1115/1.2910291",
+  "urls": [
+   "https://doi.org/10.1115/1.2910291"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "53",
+  "citation": "Celik, I.B., Ghia, U., Roache, P.J., Freitas, C.J., Coleman, H., & Raad, P.E. (2008). Procedure for estimation and reporting of uncertainty due to discretization in CFD applications. *J. Fluids Eng.* 130(7), 078001. https://doi.org/10.1115/1.2960953. Bronze.",
+  "doi": "10.1115/1.2960953",
+  "urls": [
+   "https://doi.org/10.1115/1.2960953"
+  ],
+  "verified": "Crossref (title, journal, article number). Crossref has no author field; author list from the publisher record as commonly cited (not independently re-checked here).",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "54",
+  "citation": "Eça, L., Dowding, K., & Roache, P.J. (2022). On the interpretation and scope of the V&V 20 Standard for verification and validation in computational fluid dynamics and heat transfer. *J. Verif. Valid. Uncert. Quant.* https://doi.org/10.1115/1.4053854. Closed.",
+  "doi": "10.1115/1.4053854",
+  "urls": [
+   "https://doi.org/10.1115/1.4053854"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "54b",
+  "citation": "Great Lakes Water Authority. *Capital Improvement Plan FY2026–2030, Appendix D* (Legistar). https://glwater.legistar.com/View.ashx?GUID=0362A618-FDDD-4C47-AE08-5965014AF38A&ID=13768089&M=F.",
+  "doi": null,
+  "urls": [
+   "https://glwater.legistar.com/View.ashx?GUID=0362A618-FDDD-4C47-AE08-5965014AF38A&ID=13768089&M=F"
+  ],
+  "verified": "URL resolves (HTTP 200); content not re-read this session.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "55",
+  "citation": "Oberkampf, W.L., & Roy, C.J. (2010). *Verification and Validation in Scientific Computing*. Cambridge University Press. https://doi.org/10.1017/CBO9780511760396. Closed.",
+  "doi": "10.1017/CBO9780511760396",
+  "urls": [
+   "https://doi.org/10.1017/CBO9780511760396"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "56",
+  "citation": "Pianosi, F., Beven, K., Freer, J., Hall, J.W., Rougier, J., Stephenson, D.B., & Wagener, T. (2016). Sensitivity analysis of environmental models: A systematic review with practical workflow. *Environ. Model. Softw.* 79, 214–232. https://doi.org/10.1016/j.envsoft.2016.02.008. Hybrid OA.",
+  "doi": "10.1016/j.envsoft.2016.02.008",
+  "urls": [
+   "https://doi.org/10.1016/j.envsoft.2016.02.008"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "57",
+  "citation": "Saltelli, A., Ratto, M., Andres, T., Campolongo, F., Cariboni, J., Gatelli, D., Saisana, M., & Tarantola, S. (2008; Crossref issued 2007). *Global Sensitivity Analysis: The Primer*. Wiley. https://doi.org/10.1002/9780470725184. Closed.",
+  "doi": "10.1002/9780470725184",
+  "urls": [
+   "https://doi.org/10.1002/9780470725184"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "58",
+  "citation": "Yin, Z., Saadati, Y., Leon, A.S., Hadi Amini, M., Bian, L., & Hu, B. (2024). Forecasting and optimization for minimizing combined sewer overflows using machine learning frameworks and its inversion techniques. *J. Hydrol.* 628, 130515. https://doi.org/10.1016/j.jhydrol.2023.130515; NSF PAR copy: https://par.nsf.gov/servlets/purl/10523713. Bronze/open (PAR).",
+  "doi": "10.1016/j.jhydrol.2023.130515",
+  "urls": [
+   "https://doi.org/10.1016/j.jhydrol.2023.130515",
+   "https://par.nsf.gov/servlets/purl/10523713"
+  ],
+  "verified": "Crossref + OpenAlex + FT (PAR copy of published article; pp. 4–5, 10–13).",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": true
+ },
+ {
+  "id": "59",
+  "citation": "Ridgway, K.E., & Rabbaig, M.M. (2006). Use of in-line inflatable dams for CSO control. *Proc. WEF (WEFTEC)* 2006(6), 5578–5590. https://doi.org/10.2175/193864706783775504. Closed.",
+  "doi": "10.2175/193864706783775504",
+  "urls": [
+   "https://doi.org/10.2175/193864706783775504"
+  ],
+  "verified": "Crossref + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "60",
+  "citation": "Yin, Z., Zahedi, L., Leon, A.S., Amini, M.H., & Bian, L. (2022). A machine learning framework for overflow prediction in combined sewer systems. In *World Environmental and Water Resources Congress 2022*, pp. 194–205. ASCE. https://doi.org/10.1061/9780784484258.019. Closed.",
+  "doi": "10.1061/9780784484258.019",
+  "urls": [
+   "https://doi.org/10.1061/9780784484258.019"
+  ],
+  "verified": "Crossref + OpenAlex + AB (also FIU Discovery record).",
+  "read_level": "AB",
+  "same_site_PFSMC": true
+ },
+ {
+  "id": "61",
+  "citation": "Yin, Z., Leon, A.S., Sharifi, A., & Amini, M.H. (2023). Optimal control of combined sewer systems to minimize sewer overflows by using reinforcement learning. In *World Environmental and Water Resources Congress 2023*, pp. 711–722. ASCE. https://doi.org/10.1061/9780784484852.067; NSF PAR: https://par.nsf.gov/servlets/purl/10459969. Open (PAR).",
+  "doi": "10.1061/9780784484852.067",
+  "urls": [
+   "https://doi.org/10.1061/9780784484852.067",
+   "https://par.nsf.gov/servlets/purl/10459969"
+  ],
+  "verified": "Crossref + FT (PAR; pp. 713, 715–717, 720).",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": true
+ },
+ {
+  "id": "62",
+  "citation": "Syed, Z., Saadati, Y., Yin, Z., Hadi Amini, M., & Leon, A.S. (2025). Optimal control of combined sewer overflow (CSO) using gradient-based neural network inversion with projected precipitation inputs. In *World Environmental and Water Resources Congress 2025*, pp. 725–735. ASCE. https://doi.org/10.1061/9780784486184.068; NSF PAR: https://par.nsf.gov/servlets/purl/10615945. Open (PAR).",
+  "doi": "10.1061/9780784486184.068",
+  "urls": [
+   "https://doi.org/10.1061/9780784486184.068",
+   "https://par.nsf.gov/servlets/purl/10615945"
+  ],
+  "verified": "Crossref + FT (PAR; pp. 727, 729, 731–732).",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": true
+ },
+ {
+  "id": "63",
+  "citation": "Syed, Z., Saadati, Y., Yin, Z., Hadi Amini, M., & Leon, A.S. (2026). Continual learning with elastic weight consolidation for robust combined sewer overflow optimization via neural inversion. In *World Environmental and Water Resources Congress 2026*, pp. 548–559. ASCE. https://doi.org/10.1061/9780784486931.045. Closed (PAR full text embargoed until 23 Apr 2027).",
+  "doi": "10.1061/9780784486931.045",
+  "urls": [
+   "https://doi.org/10.1061/9780784486931.045"
+  ],
+  "verified": "Crossref + OpenAlex + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": true
+ },
+ {
+  "id": "64",
+  "citation": "Syed, Z., Saadati, Y., Yin, Z., Amini, M.H., & Leon, A.S. (2025). Continual learning with elastic weight consolidation (EWC) for robust combined sewer overflow prediction and optimization via neural inversion. *SSRN preprint*. https://doi.org/10.2139/ssrn.5393892. OA per OpenAlex, but download was bot-blocked here.",
+  "doi": "10.2139/ssrn.5393892",
+  "urls": [
+   "https://doi.org/10.2139/ssrn.5393892"
+  ],
+  "verified": "Crossref/MD.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": true
+ },
+ {
+  "id": "65",
+  "citation": "Syed, Z. (2026). *Integrated Continual Learning Frameworks for Real-Time Combined Sewer Overflow Control Prediction and Optimization via Neural Inversion* (Version 1) [Dataset]. Mendeley Data. https://doi.org/10.17632/4spjvszr6z.1. Open.",
+  "doi": "10.17632/4spjvszr6z.1",
+  "urls": [
+   "https://doi.org/10.17632/4spjvszr6z.1"
+  ],
+  "verified": "OpenAlex + dataset landing page and public file list (description, \"Steps to reproduce\", three output CSVs; no INP).",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": true
+ },
+ {
+  "id": "66",
+  "citation": "Yin, Z. (2023). *Predicting-and-Minimizing-Combined-Sewer-Overflows* (GitHub repository; files `7MPF_25yr_P1_FF.inp`, `MU_Exist2020Q4_TY_2020Q4.inp`). https://github.com/ZedaYin/Predicting-and-Minimizing-Combined-Sewer-Overflows. Open.",
+  "doi": null,
+  "urls": [
+   "https://github.com/ZedaYin/Predicting-and-Minimizing-Combined-Sewer-Overflows"
+  ],
+  "verified": "CODE (repository cited in [58, p. 4]; GitHub API metadata; INP downloaded and parsed: [TITLE], [OPTIONS], [ORIFICES], [PUMPS], [STORAGE], [CONTROLS], [EVENTS]). Local structured diff on 2026-10-20: [TITLE], [CONTROLS], [ORIFICES], [PUMPS] and [OUTFALLS] match 7MPF_CSO_08.inp after whitespace normalisation; rainfall/time series, start date, report step and display geometry differ. Public SHA-256 7a790689b1dbc8ea613f4456a3032c5b5cbe8aa635627ac1eda174a7937c74be; canonical SHA-256 186a0cfc57e59d1b815b224a89ddb506a72a1dc608585845c49043c1dfc4f125.",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": true
+ },
+ {
+  "id": "67",
+  "citation": "Great Lakes Water Authority (2019). *CEO Report, April 24, 2019, and General Counsel Report*. https://www.glwater.org/wp-content/uploads/2019/04/CEO-Report-April-24-2019-and-General-Counsel-Report.pdf. Open.",
+  "doi": null,
+  "urls": [
+   "https://www.glwater.org/wp-content/uploads/2019/04/CEO-Report-April-24-2019-and-General-Counsel-Report.pdf"
+  ],
+  "verified": "FT (PDF pp. 12, 15). Board report, not peer reviewed.",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "68",
+  "citation": "Great Lakes Water Authority (2018). *Combined Sewer Overflow (CSO) Public Notification Plan* (final, 8/2/2018). https://www.glwater.org/wp-content/uploads/2020/04/Final_CSO-Notification-Plan-8.2.2018.pdf. Open.",
+  "doi": null,
+  "urls": [
+   "https://www.glwater.org/wp-content/uploads/2020/04/Final_CSO-Notification-Plan-8.2.2018.pdf"
+  ],
+  "verified": "FT (§IV–V, outfall tables).",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "69",
+  "citation": "Eichenwald, Z., McGrath, G., Burchi, J., Thomas, B., Saparia, B., & Gee, S. (2021). Real-time assessment of the GLWA's Regional Operating Plan using digital twin technology. *Proceedings of the Water Environment Federation*, Collection Systems 2021 (virtual, March 23–25, 2021). https://www.accesswater.org/publications/proceedings/-10044440/real-time-assessment-of-the-glwa-s-regional-operating-plan-using-digital-twin-technology. Closed.",
+  "doi": null,
+  "urls": [
+   "https://www.accesswater.org/publications/proceedings/-10044440/real-time-assessment-of-the-glwa-s-regional-operating-plan-using-digital-twin-technology"
+  ],
+  "verified": "publisher landing page + AB (extended abstract). No DOI found via Crossref.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "70",
+  "citation": "Ewing, G., Mullapudi, A., Troutman, S.C., Kerkez, B., Barrott, W., & Nastally, C. (2019). Open-Storm Detroit Dynamics. *WE&T* 31(7), 28–35. https://www.accesswater.org/publications/-325073/open-storm-detroit-dynamics. Closed.",
+  "doi": null,
+  "urls": [
+   "https://www.accesswater.org/publications/-325073/open-storm-detroit-dynamics"
+  ],
+  "verified": "publisher landing page + section previews only. Trade magazine.",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "71",
+  "citation": "Brink, P., Santini, A.D., Ibrahim, A., & TenBroek, M.J. (Camp Dresser & McKee) (2001). Development and use of continuous SWMM for CSO notification for the City of Detroit. *Journal of Water Management Modeling*. https://doi.org/10.14796/jwmm.r207-20. Open (CHI).",
+  "doi": "10.14796/jwmm.r207-20",
+  "urls": [
+   "https://doi.org/10.14796/jwmm.r207-20"
+  ],
+  "verified": "Crossref + OpenAlex + AB.",
+  "read_level": "AB",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "72",
+  "citation": "León, A.S., Yin, Z., & Sharifi, A. (2024). A finite volume model for maintaining stationarity and reducing spurious oscillations in simulations of sewer system filling and emptying. *J. Hydraul. Res.* 62(3), 267–282. https://doi.org/10.1080/00221686.2024.2341880; NSF PAR: https://par.nsf.gov/servlets/purl/10523709. Open (PAR).",
+  "doi": "10.1080/00221686.2024.2341880",
+  "urls": [
+   "https://doi.org/10.1080/00221686.2024.2341880",
+   "https://par.nsf.gov/servlets/purl/10523709"
+  ],
+  "verified": "Crossref + FT (PAR; checked for Detroit/PFSMC: not identifiable).",
+  "read_level": "FT/CODE",
+  "same_site_PFSMC": false
+ },
+ {
+  "id": "73",
+  "citation": "León Research Group, FIU. *People: Zeda Yin* and *Our Publications* (web pages). https://web.eng.fiu.edu/arleon/People_Zeda.html; https://web.eng.fiu.edu/arleon/Publications.html. Open.",
+  "doi": null,
+  "urls": [
+   "https://web.eng.fiu.edu/arleon/People_Zeda.html",
+   "https://web.eng.fiu.edu/arleon/Publications.html"
+  ],
+  "verified": "pages opened (PhD Spring 2024; conference page ranges).",
+  "read_level": "MD/URL",
+  "same_site_PFSMC": false
+ }
+]

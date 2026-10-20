@@ -32,11 +32,18 @@ exclusive gate ownership. Reference episodes do not write target settings.
 
 ## Root causes found
 
-1. **Unresolved hybrid hydraulic/control sensitivity (blocking, verified).**
+1. **Native hybrid-control sensitivity (blocking, causally isolated).**
    The best 0.5-to-0.25-second native comparison differs by 57.118 m3 or
-   1.422%, above the unchanged 1% limit. The original zero-deadband rules switch
-   600 versus 914 times. Fixed rule cadence and multiple solver candidates also
-   fail. This prevents a resolution-independent native comparator.
+   1.422%, above the unchanged 1% limit. A third 0.125-second refinement changes
+   CSO by 239.396 m3 (6.339%) in the opposite direction, so no real observed
+   convergence order exists. Predicate tracing localises the critical branch to
+   the 35281_A flow crossing that closes gate 35281_B 46.25 seconds apart.
+   PUMP29 chatter occurs later and is not causal for this residual. With all
+   controls frozen, the same 0.5-to-0.25-second hydraulic comparison differs by
+   only 0.238% and passes unchanged output, flood and continuity criteria. This
+   isolates native switching semantics as the blocker and prevents a
+   resolution-independent native comparator. See
+   `native_control_resolution_20261020.md`.
 
 2. **Incomplete historical objective (fixed in code, not yet re-evaluated).**
    Earlier paths sampled two weirs and omitted untreated bypass outfalls. Every

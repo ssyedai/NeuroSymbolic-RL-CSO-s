@@ -151,7 +151,14 @@ def main():
     parser.add_argument("--fixed-rule-second", action="store_true", help="Diagnostic only: evaluate native rules every second at all routing resolutions")
     parser.add_argument("--max-trials", type=int, choices=[40, 100, 200], default=40,
                         help="Bounded iteration-budget ablation; default preserves the established 40-trial profile")
-    parser.add_argument("--routing-seconds", nargs="+", type=float, choices=[1,.5,.25], default=[1,.5,.25])
+    parser.add_argument(
+        "--routing-seconds",
+        nargs="+",
+        type=float,
+        choices=[1, .5, .25, .125],
+        default=[1, .5, .25],
+        help="Maximum routing steps; 0.125 s is the pre-declared third-refinement diagnostic",
+    )
     args = parser.parse_args()
     root = args.out
     root.mkdir(parents=True, exist_ok=False)

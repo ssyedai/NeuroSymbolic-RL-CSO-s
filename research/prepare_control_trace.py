@@ -17,8 +17,24 @@ def main():
 static FILE *ControlFile = NULL;
 static double *ControlSetting = NULL, *ControlTarget = NULL;
 '''
-    after = before.replace('static FILE *WindowFile = NULL;',
-                           'static FILE *WindowFile = NULL;'+declaration, 1)
+    if 'static FILE *WindowFile = NULL;' in before:
+        after = before.replace('static FILE *WindowFile = NULL;',
+                               'static FILE *WindowFile = NULL;'+declaration, 1)
+        close_anchor = '    if (WindowFile) fclose(WindowFile);'
+        close_replacement = '''    if (ControlFile) fclose(ControlFile);
+    ControlFile = NULL;
+    FREE(ControlSetting); FREE(ControlTarget);
+'''+close_anchor
+    else:
+        shared_anchor = 'static TXnode* Xnode;                  // extended nodal information\n'
+        if before.count(shared_anchor) != 1:
+            raise ValueError('No unique shared-state anchor for control trace')
+        after = before.replace(shared_anchor, shared_anchor + declaration, 1)
+        close_anchor = '    FREE(Xnode);'
+        close_replacement = '''    if (ControlFile) fclose(ControlFile);
+    ControlFile = NULL;
+    FREE(ControlSetting); FREE(ControlTarget);
+'''+close_anchor
     init = '''
     if (getenv("SWMM_CONTROL_TRACE")) {
         int z;
@@ -40,12 +56,9 @@ static double *ControlSetting = NULL, *ControlTarget = NULL;
     anchor = '    VariableStep = 0.0;'
     assert after.count(anchor) == 1
     after = after.replace(anchor, anchor+init, 1)
-    anchor = '    if (WindowFile) fclose(WindowFile);'
-    assert after.count(anchor) == 1
-    after = after.replace(anchor, '''    if (ControlFile) fclose(ControlFile);
-    ControlFile = NULL;
-    FREE(ControlSetting); FREE(ControlTarget);
-'''+anchor, 1)
+    if after.count(close_anchor) != 1:
+        raise ValueError('No unique close anchor for control trace')
+    after = after.replace(close_anchor, close_replacement, 1)
     trace = '''
     if (ControlFile) {
         int z,n1,n2;

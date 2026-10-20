@@ -20,8 +20,10 @@ def assert_hydraulic_training_ready(path=DEFAULT_HYDRAULIC_EVIDENCE) -> dict:
         raise RuntimeError(
             "Official v8 experiments are blocked: runs/hydraulic_acceptance.json "
             "does not exist. The latest verified 0.5-to-0.25 s native refinement "
-            "differs by 1.422%, above the unchanged 1% limit. See "
-            "docs/coupled_endpoint_verification_20261020.md.")
+            "differs by 1.422%, above the unchanged 1% limit; the 0.125 s result "
+            "reverses direction and differs from 0.25 s by 6.339%. Frozen controls "
+            "pass at 0.238%, isolating native switching without authorizing a new "
+            "reference. See docs/native_control_resolution_20261020.md.")
     evidence = json.loads(path.read_text())
     required_true = (
         "passed", "true_native_control", "complete_four_outfall_objective",
