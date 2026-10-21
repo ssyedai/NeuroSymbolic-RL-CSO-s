@@ -15,6 +15,7 @@ from multistorm.kb_v8 import KnowledgeBaseV8
 FT3_TO_M3 = 0.028316846592
 CSO_OUTFALLS = ("54", "65", "54_B", "65_B")
 TREATED_OUTFALLS = ("JCT-2112", "JCT-3090")
+GATE_IDS = ("1360", "1360_B", "35263", "35281_B", "35291_B", "3530", "3530_B")
 COMPLETE_BASELINE_TAG = "v6|physrain|nativefix|all4outfalls|gross_outward|nodeflood|external_control|72h"
 EXPLORATORY_BASELINE_TAG = COMPLETE_BASELINE_TAG + "|exploratory|native_step_sensitive"
 
@@ -57,6 +58,10 @@ class CompleteOverflowEnv(NeurosymbolicSWMMEnv):
     """Same action interface, with complete physical volume accounting."""
 
     def __init__(self, *args, **kwargs):
+        self.native_managed_gates = tuple(kwargs.pop("native_managed_gates", ()))
+        unknown = set(self.native_managed_gates) - set(GATE_IDS)
+        if unknown:
+            raise ValueError(f"Unknown native-managed gates: {sorted(unknown)}")
         kwargs["full_horizon"] = True
         super().__init__(*args, **kwargs)
 
@@ -69,18 +74,28 @@ class CompleteOverflowEnv(NeurosymbolicSWMMEnv):
                 raise ValueError("Only generated episode INPs may have native controls removed")
             text = path.read_text()
             def control_section(match):
-                if not self.native_pumps:
+                if not self.native_pumps and not self.native_managed_gates:
                     return "[CONTROLS]\n; External gates and pumps; no native actuator rules.\n\n"
                 blocks = re.split(r"(?im)^(?=RULE\s)", match.group(0))
                 kept = []
                 for block in blocks:
-                    if re.search(r"(?im)^\s*(THEN|ELSE|AND)\s+PUMP\s", block):
-                        if re.search(r"(?im)^\s*(THEN|ELSE|AND)\s+(ORIFICE|CONDUIT|WEIR|OUTLET)\s", block):
-                            raise ValueError("Cannot separate mixed pump/gate control rule")
+                    pump_targets = set(re.findall(
+                        r"(?im)^\s*(?:THEN|ELSE|AND)\s+PUMP\s+(\S+)", block))
+                    gate_targets = set(re.findall(
+                        r"(?im)^\s*(?:THEN|ELSE|AND)\s+(?:ORIFICE|CONDUIT|WEIR|OUTLET)\s+(\S+)",
+                        block))
+                    if pump_targets and gate_targets:
+                        raise ValueError("Cannot separate mixed pump/gate control rule")
+                    managed = set(self.native_managed_gates)
+                    if gate_targets & managed and not gate_targets <= managed:
+                        raise ValueError("Cannot separate a rule with mixed gate ownership")
+                    if ((pump_targets and self.native_pumps)
+                            or (gate_targets and gate_targets <= managed)):
                         kept.append(block)
                 if not kept:
-                    raise ValueError("Native pump interlock rules missing")
-                return "[CONTROLS]\n; External gates; original pump rules retained.\n" + "\n".join(kept) + "\n"
+                    raise ValueError("Requested native actuator rules are missing")
+                return ("[CONTROLS]\n; Hybrid ownership: selected native rules retained.\n"
+                        + "\n".join(kept) + "\n")
             text, count = re.subn(r"(?ms)^\[CONTROLS\][^\r\n]*\r?\n.*?(?=^\[|\Z)",
                                   control_section, text)
             if count != 1:
@@ -167,6 +182,11 @@ class CompleteOverflowEnv(NeurosymbolicSWMMEnv):
         elif self.policy_controls_pumps:
             control_owner = "external gates and pumps"
             pump_control = "external policy"
+        elif self.native_managed_gates:
+            external = [g for g in GATE_IDS if g not in self.native_managed_gates]
+            control_owner = (f"hybrid: external {','.join(external)}; "
+                             f"INP native {','.join(self.native_managed_gates)}")
+            pump_control = "INP native" if self.native_pumps else "ON"
         else:
             control_owner = "external gates"
             pump_control = "ON" if not self.native_pumps else "INP native"
@@ -227,7 +247,11 @@ class CompleteOverflowEnv(NeurosymbolicSWMMEnv):
         if hasattr(action, "detach"):
             action = action.detach().cpu().numpy()
         action = np.asarray(action, dtype=float).reshape(-1)
-        if getattr(self.kb, "native_rule_prior", False) and action.size == 3:
+        if getattr(self.kb, "gate2_rule_prior", False) and action.size == 1:
+            expanded = np.full(7, 0.5, dtype=float)
+            expanded[2] = action[0]
+            action = expanded
+        elif getattr(self.kb, "native_rule_prior", False) and action.size == 3:
             # Three learned residuals: Seven Mile route split, Shiawassee
             # gate, and Puritan-Fenkell route split. Unowned gate slots are
             # neutral placeholders consumed by CompleteOverflowKB.
@@ -288,13 +312,15 @@ class CompleteOverflowKB(KnowledgeBaseV8):
     ensures this release is still charged to the controller.
     """
     def __init__(self, *args, hard_bypass_mask=False, native_rule_prior=False,
+                 gate2_rule_prior=False,
                  residual_max=0.25, **kwargs):
         super().__init__(*args, **kwargs)
         self.hard_bypass_mask = bool(hard_bypass_mask)
         self.native_rule_prior = bool(native_rule_prior)
+        self.gate2_rule_prior = bool(gate2_rule_prior)
         self.residual_max = float(residual_max)
-        if self.hard_bypass_mask and self.native_rule_prior:
-            raise ValueError("hard_bypass_mask and native_rule_prior are separate ablations")
+        if sum((self.hard_bypass_mask, self.native_rule_prior, self.gate2_rule_prior)) > 1:
+            raise ValueError("action mask and rule-prior modes are separate ablations")
         if not 0.0 <= self.residual_max <= 0.5:
             raise ValueError("residual_max must be between 0 and 0.5")
         self._native_targets = None
@@ -358,6 +384,37 @@ class CompleteOverflowKB(KnowledgeBaseV8):
     def project_action(self, raw, obs):
         raw_clipped = np.clip(np.asarray(raw, dtype=float), 0.0, 1.0)
         direct = self._direct_bypass_gates()
+        if self.gate2_rule_prior:
+            if raw_clipped.size < 7:
+                raise ValueError("gate2_rule_prior expects an expanded seven-gate action")
+            base = self._native_rule_targets(obs)
+            current = np.asarray([
+                obs["link_settings"][gate] for gate in GATE_IDS
+            ], dtype=float)
+            admissible = current.copy()
+            admissible[2] = np.clip(
+                base[2] + (raw_clipped[2] - 0.5) * 2.0 * self.residual_max,
+                0.0, 1.0)
+            if raw_clipped.size >= 10:
+                admissible = np.r_[admissible, raw_clipped[7:]]
+            projected = super().project_action(admissible, obs)
+            # The retained native rules own these six targets. Do not let the
+            # external shield overwrite or claim an intervention on them.
+            managed = [0, 1, 3, 4, 5, 6]
+            projected[managed] = admissible[managed]
+            self.last_info["explanations"] = [dict(
+                gate_idx=2, rule="GATE2_NATIVE_RESIDUAL",
+                proposed=float(raw_clipped[2]), applied=float(admissible[2]),
+                native_base=float(base[2]), residual_max=self.residual_max,
+                reason="Bounded residual on gate 35263; other gates remain INP-native",
+            )] + [x for x in self.last_info["explanations"]
+                   if int(x.get("gate_idx", -1)) == 2]
+            self.last_info["admissible_action"] = admissible.copy()
+            self.last_info["actor_constraint"] = float(
+                abs(admissible[2] - raw_clipped[2]))
+            self.last_info["intervention"] = float(
+                abs(projected[2] - admissible[2]))
+            return projected
         if self.native_rule_prior:
             admissible, base = self._native_residual_action(raw_clipped, obs)
             if raw_clipped.size >= 10:

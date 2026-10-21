@@ -21,11 +21,13 @@ def main(argv=None):
     ap.add_argument("--theta-path", default="runs/theta.json")
     ap.add_argument("--out-dir", default="runs/baselines_tier1")
     ap.add_argument("--which", default="b0,b2,b3",
-                    help="comma list among b0,b1,b2,b3,nativeprior (b1=native is already in cache)")
+                    help="comma list among b0,b1,b2,b3,nativeprior,hybridgate2")
     ap.add_argument("--baseline-cache", default=None,
                     help="Optional existing train/validation reference cache")
     ap.add_argument("--control-step", type=int, default=900,
                     choices=[300, 900], help="External control interval in seconds")
+    ap.add_argument("--hybrid-action", type=float, default=0.5,
+                    help="Constant normalized residual used by the hybridgate2 diagnostic")
     ap.add_argument("--max-storms", type=int, default=0)
     ap.add_argument("--splits", default="test")
     ap.add_argument("--protocol-tag", default="protocol-v1")
@@ -100,13 +102,26 @@ def main(argv=None):
     (out / "run_config.json").write_text(
         json.dumps(run_config, indent=1, default=str))
 
+    requested = [x.strip().lower() for x in a.which.split(",") if x.strip()]
+    hybrid = "hybridgate2" in requested
+    if hybrid and len(requested) != 1:
+        raise ValueError("hybridgate2 must run alone because it uses different actuator ownership")
+    hybrid_kwargs = {}
+    if hybrid:
+        hybrid_kwargs = dict(
+            gate2_rule_prior=True, policy_dim=1,
+            native_managed_gates=("1360", "1360_B", "35281_B", "35291_B", "3530", "3530_B"),
+            external_gate_indices=(2,),
+        )
     env, _, _ = A.build_v8(
         0, complete_overflow=True, native_pumps=True,
-        control_time_step=a.control_step)
+        control_time_step=a.control_step, **hybrid_kwargs)
     baseline_tag = (EXPLORATORY_BASELINE_TAG if a.exploratory
                     else COMPLETE_BASELINE_TAG)
     if a.control_step != 900:
         baseline_tag += f"|ctrl{a.control_step}"
+    if hybrid:
+        baseline_tag += "|hybridgate2"
     bstore = BaselineStore(a.baseline_cache or out / "baseline_cache.json", "7MPF_CSO_08.inp",
                            A.calibrate_fn(env), A.static_fn(env), A.native_fn(env),
                            tag=baseline_tag)
@@ -117,8 +132,7 @@ def main(argv=None):
         def select_action(self, obs, deterministic=True):
             return self.a
 
-    for name in a.which.split(","):
-        name = name.strip().lower()
+    for name in requested:
         if name == "b0":
             env.kb = CompleteOverflowKB(full, list(nodes[nodes.junction].id), topo)
             env.use_projection = False
@@ -144,6 +158,15 @@ def main(argv=None):
             env.use_projection = True
             agent = _Const(np.full(3, 0.5))
             env.policy_dim = 3
+        elif name == "hybridgate2":
+            if not 0.0 <= a.hybrid_action <= 1.0:
+                raise ValueError("--hybrid-action must be in [0, 1]")
+            env.kb = CompleteOverflowKB(
+                full, list(nodes[nodes.junction].id), topo,
+                theta=theta or DEFAULT_THETA, gate2_rule_prior=True)
+            env.use_projection = True
+            agent = _Const(np.full(1, a.hybrid_action))
+            env.policy_dim = 1
         elif name == "b1":
             from multistorm.metrics_v8 import enrich
             # native reference already in cache — materialise rows from native records

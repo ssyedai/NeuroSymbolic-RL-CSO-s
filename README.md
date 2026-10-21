@@ -98,6 +98,10 @@ improve. A later native-rule/timing diagnostic improves CSO direction but fails
 the unchanged flooding and total-overflow screens at both 15- and 5-minute
 control intervals. Those variants are blocked from training. See
 [`docs/nativeprior_timing_diagnostic_20261021.md`](docs/nativeprior_timing_diagnostic_20261021.md).
+The subsequent hybrid experiment retained the original SWMM rules for six
+gates and exposed only gate `35263`; its full bounded TRAIN screen still failed
+the C3 total-overflow check, so it is also blocked from training. See
+[`docs/hybrid_gate2_diagnostic_20261021.md`](docs/hybrid_gate2_diagnostic_20261021.md).
 Do not start `-Mode full` from these results.
 
 ## Experiment sequence

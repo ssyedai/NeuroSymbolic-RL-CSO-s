@@ -410,6 +410,7 @@ class NeurosymbolicSWMMEnv(Env):
                  full_horizon: bool = False,          # opt-in: include final control interval
                  native_pumps: bool = False,           # diagnostic ablation: preserve pump interlocks
                  external_gate_control: bool = False, # v8: remove INP gate rules from generated episode INPs
+                 external_gate_indices=None,          # opt-in policy-owned subset; default all seven
                  policy_controls_pumps: bool = False): # 10-D ablation only: policy owns pumps too
         self.kb          = knowledge_base
         self.use_projection = use_projection
@@ -419,6 +420,11 @@ class NeurosymbolicSWMMEnv(Env):
         self.full_horizon = full_horizon
         self.native_pumps = native_pumps
         self.external_gate_control = external_gate_control
+        if external_gate_indices is None:
+            external_gate_indices = range(7)
+        self.external_gate_indices = tuple(sorted({int(i) for i in external_gate_indices}))
+        if any(i < 0 or i >= 7 for i in self.external_gate_indices):
+            raise ValueError("external_gate_indices must be a subset of 0..6")
         self.policy_controls_pumps = policy_controls_pumps
         if self.policy_controls_pumps and self.policy_dim != 10:
             raise ValueError("policy_controls_pumps requires policy_dim=10")
@@ -537,10 +543,11 @@ class NeurosymbolicSWMMEnv(Env):
         v7 defaults: ALL 7 gates start at 0.5 (including 35281_B, 35291_B).
         Pumps start at 1.0 (always ON).
         """
-        for lnk in [self.O1360, self.O1360_B, self.O35263,
-                    self.O35281_B, self.O35291_B,
-                    self.O3530, self.O3530_B]:
-            lnk.target_setting = 0.5
+        gates = [self.O1360, self.O1360_B, self.O35263,
+                 self.O35281_B, self.O35291_B,
+                 self.O3530, self.O3530_B]
+        for idx in self.external_gate_indices:
+            gates[idx].target_setting = 0.5
         if not self.native_pumps:
             self.PUMP27.target_setting = 1.0
             self.PUMP28.target_setting = 1.0
@@ -630,13 +637,20 @@ class NeurosymbolicSWMMEnv(Env):
                 if not self.policy_controls_pumps:
                     proj[self.kb.PUMP_IDXS] = 1.0
             # Apply projected actions (35281_B/35291_B now freely set by agent)
-            self.O1360.target_setting    = proj[0]
-            self.O1360_B.target_setting  = proj[1]
-            self.O35263.target_setting   = proj[2]
-            self.O35281_B.target_setting = proj[3]   # active — agent-controlled
-            self.O35291_B.target_setting = proj[4]   # active — agent-controlled
-            self.O3530.target_setting    = proj[5]
-            self.O3530_B.target_setting  = proj[6]
+            if 0 in self.external_gate_indices:
+                self.O1360.target_setting = proj[0]
+            if 1 in self.external_gate_indices:
+                self.O1360_B.target_setting = proj[1]
+            if 2 in self.external_gate_indices:
+                self.O35263.target_setting = proj[2]
+            if 3 in self.external_gate_indices:
+                self.O35281_B.target_setting = proj[3]
+            if 4 in self.external_gate_indices:
+                self.O35291_B.target_setting = proj[4]
+            if 5 in self.external_gate_indices:
+                self.O3530.target_setting = proj[5]
+            if 6 in self.external_gate_indices:
+                self.O3530_B.target_setting = proj[6]
             if not self.native_pumps:
                 self.PUMP27.target_setting   = proj[7]   # always 1.0
                 self.PUMP28.target_setting   = proj[8]   # always 1.0

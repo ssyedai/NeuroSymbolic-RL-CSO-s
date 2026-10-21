@@ -141,7 +141,8 @@ def build_v8(seed, theta=None, use_projection=True, lagrangian=True, rain_featur
              cost_limit=0.05, lam_init=0.5, lam_lr=0.02, complete_overflow=False,
              policy_dim=7, topology_aware=True, w_store=2.0, native_pumps=True,
              policy_controls_pumps=False, hard_bypass_mask=False,
-             native_rule_prior=False, residual_max=0.25,
+             native_rule_prior=False, gate2_rule_prior=False, residual_max=0.25,
+             native_managed_gates=(), external_gate_indices=None,
              control_time_step=900,
              input_file="7MPF_CSO_08.inp"):
     """P11 — v8 stack: KnowledgeBaseV8 + 7-D SAC-Lag + physical-rain-ready env."""
@@ -186,6 +187,7 @@ def build_v8(seed, theta=None, use_projection=True, lagrangian=True, rain_featur
     if complete_overflow:
         kb_kwargs["hard_bypass_mask"] = hard_bypass_mask
         kb_kwargs["native_rule_prior"] = native_rule_prior
+        kb_kwargs["gate2_rule_prior"] = gate2_rule_prior
         kb_kwargs["residual_max"] = residual_max
     kb = kb_class(full, list(nodes[nodes.junction].id), topology, **kb_kwargs)
     env = env_class(
@@ -193,8 +195,10 @@ def build_v8(seed, theta=None, use_projection=True, lagrangian=True, rain_featur
         time_limit_truncation=True, real_only=True,
         native_pumps=native_pumps,
         external_gate_control=not complete_overflow,
+        external_gate_indices=external_gate_indices,
         policy_controls_pumps=policy_controls_pumps,
         control_time_step=control_time_step,
+        **({"native_managed_gates": native_managed_gates} if complete_overflow else {}),
     )
     env.physical_rain = True
     agent = SACLagAgent(

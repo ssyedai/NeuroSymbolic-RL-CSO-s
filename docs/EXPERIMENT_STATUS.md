@@ -1,5 +1,13 @@
 # Experiment status vs guides
 
+> **Hybrid-ownership follow-up, 2026-10-21:** Six fast routing gates and all
+> pump interlocks were left under their original SWMM rules; only gate 35263
+> received a bounded external residual. A five-point TRAIN-only screen kept
+> flood non-regression on 4/4 storms for actions up to 0.5, but every setting
+> failed total-overflow non-regression on the C3 storm. The best worst-case
+> excess was +6,818.301 m3. SAC was not started, and the variant is blocked
+> from training. See `docs/hybrid_gate2_diagnostic_20261021.md`. Tests: 127.
+
 > **Exploratory pipeline result, 2026-10-21:** The isolated exploratory path
 > completed G1 and a bounded train/validation smoke execution, but failed G3.
 > G1: 416 parents, median onset 3.7224, 0 missing. The 20-episode V8 run had no

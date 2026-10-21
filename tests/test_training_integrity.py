@@ -38,6 +38,11 @@ def _cfg(variant):
         ("v8_nativeprior_5m", dict(complete_overflow=True, native_pumps=True,
                                    native_rule_prior=True, policy_dim=3,
                                    control_time_step=300)),
+        ("v8_hybrid_gate2", dict(
+            complete_overflow=True, native_pumps=True,
+            gate2_rule_prior=True, policy_dim=1,
+            native_managed_gates=("1360", "1360_B", "35281_B", "35291_B", "3530", "3530_B"),
+            external_gate_indices=(2,))),
     ],
 )
 def test_v8_ablation_changes_only_named_factor(monkeypatch, variant, expected):
@@ -131,7 +136,8 @@ def test_theta_evidence_cannot_cross_exploratory_boundary(tmp_path):
         train_multi._load_theta(path, exploratory=False)
 
 
-@pytest.mark.parametrize("variant", ["v8_nativeprior", "v8_nativeprior_5m"])
+@pytest.mark.parametrize("variant", ["v8_nativeprior", "v8_nativeprior_5m",
+                                     "v8_hybrid_gate2"])
 def test_unsafe_native_prior_variants_cannot_start_training(variant):
     cfg = _cfg(variant)
     cfg.exploratory = True

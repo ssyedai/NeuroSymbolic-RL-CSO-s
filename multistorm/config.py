@@ -102,7 +102,7 @@ def parse_args(argv=None) -> MultiStormConfig:
                             "b0", "b2", "b3",
                             "v8_notopo", "v8_nostore", "v8_nolag", "v8_noshield",
                             "v8_norain", "v8_10d", "v8_actionmask", "v8_nativeprior",
-                            "v8_nativeprior_5m"])
+                            "v8_nativeprior_5m", "v8_hybrid_gate2"])
     p.add_argument("--data-manifest", default=None)
     p.add_argument("--diet", default="D2_ladder100",
                    choices=["D1_flat2", "D2_ladder100", "D3_ladder1000", "D4_real", "D5_all"])

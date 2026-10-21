@@ -29,6 +29,7 @@ V8_VARIANTS = {
     "v8_actionmask",
     "v8_nativeprior",
     "v8_nativeprior_5m",
+    "v8_hybrid_gate2",
 }
 
 
@@ -142,6 +143,12 @@ def _build_stack(cfg):
     if v == "v8_nativeprior_5m":
         return v8_stack(theta=theta, native_rule_prior=True, policy_dim=3,
                         control_time_step=300)
+    if v == "v8_hybrid_gate2":
+        return v8_stack(
+            theta=theta, gate2_rule_prior=True, policy_dim=1,
+            native_managed_gates=("1360", "1360_B", "35281_B", "35291_B", "3530", "3530_B"),
+            external_gate_indices=(2,),
+        )
     # v7 / m0 / legacy
     env, agent, kb = A.build(cfg.seed)
     if cfg.physical_rain or cfg.real_only:
@@ -177,12 +184,13 @@ def main(cfg=None):
     if cfg.variant in V8_VARIANTS:
         from research.readiness import experiment_status
         experiment = experiment_status(cfg.exploratory)
-        if cfg.variant in {"v8_nativeprior", "v8_nativeprior_5m"}:
+        if cfg.variant in {"v8_nativeprior", "v8_nativeprior_5m", "v8_hybrid_gate2"}:
             raise RuntimeError(
                 f"{cfg.variant} is diagnostic-only: its TRAIN safety grid found no "
                 "setting with complete flood and total-overflow non-regression. "
                 "Do not train around an unsafe prior; see "
-                "runs/exploratory/nativeprior_grid*/summary.csv.")
+                "runs/exploratory/nativeprior_grid*/summary.csv and "
+                "runs/exploratory/hybrid_gate2_screen/.")
         if cfg.exploratory and not cfg.run_name.startswith("exploratory_"):
             raise ValueError("Exploratory v8 run names must start with 'exploratory_'")
         if cfg.max_final_val_eval and not cfg.exploratory:
@@ -298,6 +306,8 @@ def main(cfg=None):
         from .complete_overflow import COMPLETE_BASELINE_TAG, EXPLORATORY_BASELINE_TAG
         config_baseline_tag = (EXPLORATORY_BASELINE_TAG if cfg.exploratory
                                else COMPLETE_BASELINE_TAG)
+        if cfg.variant == "v8_hybrid_gate2":
+            config_baseline_tag += "|hybridgate2"
     run_cfg = dict(asdict(cfg), git_hash=git_hash, git_dirty=bool(git_dirty_files),
                    git_dirty_files=git_dirty_files, git_diff_sha256=git_diff_sha256,
                    manifest_hash=man_hash, theta_hash=theta_hash,
@@ -307,6 +317,7 @@ def main(cfg=None):
                    effective_policy_controls_pumps=cfg.variant == "v8_10d",
                    effective_hard_bypass_mask=cfg.variant == "v8_actionmask",
                    effective_native_rule_prior=cfg.variant in {"v8_nativeprior", "v8_nativeprior_5m"},
+                   effective_gate2_rule_prior=cfg.variant == "v8_hybrid_gate2",
                    effective_control_time_step_s=(300 if cfg.variant == "v8_nativeprior_5m" else 900),
                    **experiment,
                    python_version=platform.python_version(), lib_versions=versions)
@@ -326,6 +337,8 @@ def main(cfg=None):
         from .complete_overflow import COMPLETE_BASELINE_TAG, EXPLORATORY_BASELINE_TAG
         baseline_tag = (EXPLORATORY_BASELINE_TAG if cfg.exploratory
                         else COMPLETE_BASELINE_TAG)
+        if cfg.variant == "v8_hybrid_gate2":
+            baseline_tag += "|hybridgate2"
     # This process never deserializes test references. Official test evaluation
     # has its own cache and entry point after protocol freeze.
     bstore = BaselineStore(run / "baseline_cache_trainval.json", cfg.inp,
@@ -338,6 +351,7 @@ def main(cfg=None):
         pump_control="external policy" if cfg.variant == "v8_10d" else "INP native",
         hard_bypass_mask=cfg.variant == "v8_actionmask",
         native_rule_prior=cfg.variant in {"v8_nativeprior", "v8_nativeprior_5m"},
+        gate2_rule_prior=cfg.variant == "v8_hybrid_gate2",
         control_time_step_s=(300 if cfg.variant == "v8_nativeprior_5m" else 900),
         research_status=experiment["research_status"],
         exploratory=bool(cfg.exploratory),

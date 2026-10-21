@@ -108,6 +108,31 @@ def test_native_rule_prior_is_causal_bounded_and_uses_inp_bypass_conditions():
     np.testing.assert_allclose(residual[[0, 1, 2, 5, 6]], [0.75, 0.25, 0.75, 0.75, 0.25])
 
 
+def test_gate2_hybrid_changes_only_external_gate_and_keeps_bounded_prior():
+    topo = {g: dict(risk_up=[], storage_down=[], weirs_down=[], cso_outfalls_down=[])
+            for g in range(7)}
+    kb = CompleteOverflowKB({}, [], topo, gate2_rule_prior=True, residual_max=0.25)
+    kb.reset_episode()
+    current = {gate: value for gate, value in zip(
+        ("1360", "1360_B", "35263", "35281_B", "35291_B", "3530", "3530_B"),
+        (0.2, 0.8, 0.4, 0.0, 1.0, 0.7, 0.3))}
+    obs = dict(
+        node_depths={}, flooding=0, cso_flow=0, store_fill_ratio=0,
+        storage_unit_fill={},
+        node_heads={"35442": 600, "35440": 600, "35390": 600,
+                    "35391": 590, "3527": 600},
+        link_flows={"35281_A": 0, "35291_A": 0},
+        link_settings=current,
+    )
+    neutral = kb.project_action(np.full(7, 0.5), obs)
+    np.testing.assert_allclose(neutral[[0, 1, 3, 4, 5, 6]],
+                               [0.2, 0.8, 0.0, 1.0, 0.7, 0.3])
+    assert neutral[2] == pytest.approx(1.0)
+    low = kb.project_action(np.array([0.5, 0.5, 0.0, 0.5, 0.5, 0.5, 0.5]), obs)
+    assert low[2] == pytest.approx(0.75)
+    assert kb.last_info["intervention"] == pytest.approx(0.0)
+
+
 def test_shield_uses_capacity_below_overflow_crest():
     topo = {g: dict(risk_up=["up"], storage_down=["store"], weirs_down=["spill"])
             for g in range(7)}
@@ -215,5 +240,17 @@ def test_complete_native_episode_accounts_for_full_horizon_and_cleans_files():
         log = env.get_episode_log()
         assert np.allclose(log["actions_target"][:, :7], command)
         assert log["accounting_summary"]["pump_control"] == "INP native"
+        env.native_managed_gates = (
+            "1360", "1360_B", "35281_B", "35291_B", "3530", "3530_B")
+        env.external_gate_indices = (2,)
+        env.reset(options=dict(storm=storm, physical_rain=True, native=False,
+                               use_projection=False))
+        text = Path(env.input_file).read_text().upper()
+        assert "RULE FIRSTFLUSH_7M_FF" in text
+        assert "RULE 7M_FLOW_SPLIT" in text
+        assert "RULE PUMP27A" in text
+        assert "RULE SHIAWASSEEGATECLOSE" not in text
+        assert env.get_episode_log()["accounting_summary"]["control_owner"].startswith(
+            "hybrid: external 35263")
     finally:
         env.close()
