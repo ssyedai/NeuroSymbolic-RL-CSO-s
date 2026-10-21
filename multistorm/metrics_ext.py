@@ -15,6 +15,8 @@ def count_events(active: np.ndarray, min_gap_steps: int = 24) -> int:
 
 
 def extended_summary(L: dict) -> dict:
+    step_s = float(L.get("control_step_s", 900.0))
+    volume_per_cfs_step = 0.028316846592 * step_s
     if "cso_definition" not in L and "cso_flow_35391" in L and "cso_flow_35444" in L:
         q1 = np.asarray(L["cso_flow_35391"], float)
         q2 = np.asarray(L["cso_flow_35444"], float)
@@ -33,8 +35,8 @@ def extended_summary(L: dict) -> dict:
     admissible = np.asarray(L.get("actions_admissible", raw), float)
     if admissible.ndim == 2 and admissible.shape[1] >= 7:
         admissible = admissible[:, :7]
-    v_cso = float(cso.sum() * CFS_TO_M3_PER_STEP)
-    v_pump = float(pump.sum() * CFS_TO_M3_PER_STEP)
+    v_cso = float(cso.sum() * volume_per_cfs_step)
+    v_pump = float(pump.sum() * volume_per_cfs_step)
     d = (np.abs(acts - admissible)
          if acts.shape == admissible.shape else np.zeros_like(acts))
     constrained = (np.abs(admissible - raw)
@@ -46,10 +48,10 @@ def extended_summary(L: dict) -> dict:
     reversals = int(np.sum((sgn[1:] * sgn[:-1]) < 0)) if len(sgn) > 1 else 0
     result = dict(
         cso_vol_m3=v_cso,
-        cso_vol_35391_m3=float(q1.sum() * CFS_TO_M3_PER_STEP),
-        cso_vol_35444_m3=float(q2.sum() * CFS_TO_M3_PER_STEP),
+        cso_vol_35391_m3=float(q1.sum() * volume_per_cfs_step),
+        cso_vol_35444_m3=float(q2.sum() * volume_per_cfs_step),
         cso_events=count_events(cso > CSO_ON_CFS),
-        cso_hours=float((cso > CSO_ON_CFS).sum() * 0.25),
+        cso_hours=float((cso > CSO_ON_CFS).sum() * step_s / 3600.0),
         cso_peak_cfs=float(cso.max()) if len(cso) else 0.0,
         capture_ratio=float(v_pump / (v_pump + v_cso)) if (v_pump + v_cso) > 0 else float("nan"),
         actuation_tv=float(np.abs(dA).mean()) if len(dA) else 0.0,

@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
+import subprocess
 
 import numpy as np
 import pandas as pd
@@ -19,7 +21,11 @@ def main(argv=None):
     ap.add_argument("--theta-path", default="runs/theta.json")
     ap.add_argument("--out-dir", default="runs/baselines_tier1")
     ap.add_argument("--which", default="b0,b2,b3",
-                    help="comma list among b0,b1,b2,b3 (b1=native is already in cache)")
+                    help="comma list among b0,b1,b2,b3,nativeprior (b1=native is already in cache)")
+    ap.add_argument("--baseline-cache", default=None,
+                    help="Optional existing train/validation reference cache")
+    ap.add_argument("--control-step", type=int, default=900,
+                    choices=[300, 900], help="External control interval in seconds")
     ap.add_argument("--max-storms", type=int, default=0)
     ap.add_argument("--splits", default="test")
     ap.add_argument("--protocol-tag", default="protocol-v1")
@@ -69,11 +75,41 @@ def main(argv=None):
 
     out.mkdir(parents=True, exist_ok=True)
 
-    env, _, _ = A.build_v8(0, complete_overflow=True, native_pumps=True)
-    bstore = BaselineStore(out / "baseline_cache.json", "7MPF_CSO_08.inp",
+    git_dirty_files = []
+    git_diff_sha256 = None
+    try:
+        git_hash = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], text=True).strip()
+        git_dirty_files = subprocess.check_output(
+            ["git", "status", "--porcelain"], text=True).splitlines()
+        if git_dirty_files:
+            git_diff_sha256 = hashlib.sha256(subprocess.check_output(
+                ["git", "diff", "--binary", "HEAD"])).hexdigest()
+    except Exception:
+        git_hash = None
+    run_config = dict(
+        purpose="non-learned baseline/diagnostic evaluation",
+        arguments=vars(a), git_hash=git_hash,
+        git_dirty=bool(git_dirty_files), git_dirty_files=git_dirty_files,
+        git_diff_sha256=git_diff_sha256,
+        manifest_hash=hashlib.sha256(
+            Path(a.rain_dir, "data_manifest.json").read_bytes()).hexdigest(),
+        research_status=status["research_status"],
+        hydraulic_gate_passed=status["hydraulic_gate_passed"],
+    )
+    (out / "run_config.json").write_text(
+        json.dumps(run_config, indent=1, default=str))
+
+    env, _, _ = A.build_v8(
+        0, complete_overflow=True, native_pumps=True,
+        control_time_step=a.control_step)
+    baseline_tag = (EXPLORATORY_BASELINE_TAG if a.exploratory
+                    else COMPLETE_BASELINE_TAG)
+    if a.control_step != 900:
+        baseline_tag += f"|ctrl{a.control_step}"
+    bstore = BaselineStore(a.baseline_cache or out / "baseline_cache.json", "7MPF_CSO_08.inp",
                            A.calibrate_fn(env), A.static_fn(env), A.native_fn(env),
-                           tag=(EXPLORATORY_BASELINE_TAG if a.exploratory
-                                else COMPLETE_BASELINE_TAG))
+                           tag=baseline_tag)
 
     class _Const:
         def __init__(self, a):
@@ -101,6 +137,13 @@ def main(argv=None):
             env.use_projection = True
             agent = _Const(np.full(7, 0.5))
             env.policy_dim = 7
+        elif name == "nativeprior":
+            env.kb = CompleteOverflowKB(
+                full, list(nodes[nodes.junction].id), topo,
+                theta=theta or DEFAULT_THETA, native_rule_prior=True)
+            env.use_projection = True
+            agent = _Const(np.full(3, 0.5))
+            env.policy_dim = 3
         elif name == "b1":
             from multistorm.metrics_v8 import enrich
             # native reference already in cache — materialise rows from native records

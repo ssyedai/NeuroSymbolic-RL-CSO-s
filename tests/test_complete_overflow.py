@@ -66,6 +66,48 @@ def test_extended_metrics_report_mask_and_shield_separately():
     assert metrics["total_override_rate"] == 1.0
 
 
+def test_extended_metrics_respect_control_interval():
+    log = dict(
+        cso_flow=np.ones(12), pump_flow=np.ones(12),
+        actions_projected=np.zeros((12, 7)), control_step_s=300,
+    )
+    metrics = extended_summary(log)
+    assert metrics["cso_hours"] == 1.0
+    assert metrics["cso_vol_m3"] == pytest.approx(12 * 300 * 0.028316846592)
+
+
+def test_native_rule_prior_is_causal_bounded_and_uses_inp_bypass_conditions():
+    topo = {
+        g: dict(risk_up=[], storage_down=[], weirs_down=[],
+                cso_outfalls_down=(["65_B"] if g == 3 else ["54_B"] if g == 4 else []))
+        for g in range(7)
+    }
+    kb = CompleteOverflowKB({}, [], topo, native_rule_prior=True, residual_max=0.25)
+    kb.reset_episode()
+    obs = dict(
+        node_depths={}, flooding=0, cso_flow=0, store_fill_ratio=0,
+        storage_unit_fill={},
+        node_heads={"35442": 600, "35440": 600, "35390": 600,
+                    "35391": 590, "3527": 600},
+        link_flows={"35281_A": 0, "35291_A": 0},
+        link_settings={"1360": 0.5, "3530": 0.5},
+    )
+    projected = kb.project_action(np.full(7, 0.5), obs)
+    np.testing.assert_allclose(projected, [1, 0, 1, 0, 0, 1, 0])
+
+    high = {
+        **obs,
+        "node_heads": {**obs["node_heads"], "35440": 610, "35390": 604},
+        "link_flows": {"35281_A": 232, "35291_A": 322},
+    }
+    projected = kb.project_action(np.full(7, 0.5), high)
+    np.testing.assert_allclose(projected[3:5], 1.0)
+
+    residual = kb.project_action(
+        np.array([0.0, 0.5, 0.0, 0.5, 0.5, 0.0, 0.5]), obs)
+    np.testing.assert_allclose(residual[[0, 1, 2, 5, 6]], [0.75, 0.25, 0.75, 0.75, 0.25])
+
+
 def test_shield_uses_capacity_below_overflow_crest():
     topo = {g: dict(risk_up=["up"], storage_down=["store"], weirs_down=["spill"])
             for g in range(7)}

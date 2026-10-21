@@ -27,6 +27,8 @@ V8_VARIANTS = {
     "v8", "v8_complete", "plain", "lag_only", "b2", "b3",
     "v8_notopo", "v8_nostore", "v8_nolag", "v8_noshield", "v8_norain", "v8_10d",
     "v8_actionmask",
+    "v8_nativeprior",
+    "v8_nativeprior_5m",
 }
 
 
@@ -135,6 +137,11 @@ def _build_stack(cfg):
                         policy_controls_pumps=True)
     if v == "v8_actionmask":
         return v8_stack(theta=theta, hard_bypass_mask=True)
+    if v == "v8_nativeprior":
+        return v8_stack(theta=theta, native_rule_prior=True, policy_dim=3)
+    if v == "v8_nativeprior_5m":
+        return v8_stack(theta=theta, native_rule_prior=True, policy_dim=3,
+                        control_time_step=300)
     # v7 / m0 / legacy
     env, agent, kb = A.build(cfg.seed)
     if cfg.physical_rain or cfg.real_only:
@@ -170,6 +177,12 @@ def main(cfg=None):
     if cfg.variant in V8_VARIANTS:
         from research.readiness import experiment_status
         experiment = experiment_status(cfg.exploratory)
+        if cfg.variant in {"v8_nativeprior", "v8_nativeprior_5m"}:
+            raise RuntimeError(
+                f"{cfg.variant} is diagnostic-only: its TRAIN safety grid found no "
+                "setting with complete flood and total-overflow non-regression. "
+                "Do not train around an unsafe prior; see "
+                "runs/exploratory/nativeprior_grid*/summary.csv.")
         if cfg.exploratory and not cfg.run_name.startswith("exploratory_"):
             raise ValueError("Exploratory v8 run names must start with 'exploratory_'")
         if cfg.max_final_val_eval and not cfg.exploratory:
@@ -293,6 +306,8 @@ def main(cfg=None):
                    effective_native_pumps=cfg.variant != "v8_10d",
                    effective_policy_controls_pumps=cfg.variant == "v8_10d",
                    effective_hard_bypass_mask=cfg.variant == "v8_actionmask",
+                   effective_native_rule_prior=cfg.variant in {"v8_nativeprior", "v8_nativeprior_5m"},
+                   effective_control_time_step_s=(300 if cfg.variant == "v8_nativeprior_5m" else 900),
                    **experiment,
                    python_version=platform.python_version(), lib_versions=versions)
     (run / "run_config.json").write_text(json.dumps(run_cfg, indent=1, default=str))
@@ -322,6 +337,8 @@ def main(cfg=None):
         action_dim=int(env.action_space.shape[0]),
         pump_control="external policy" if cfg.variant == "v8_10d" else "INP native",
         hard_bypass_mask=cfg.variant == "v8_actionmask",
+        native_rule_prior=cfg.variant in {"v8_nativeprior", "v8_nativeprior_5m"},
+        control_time_step_s=(300 if cfg.variant == "v8_nativeprior_5m" else 900),
         research_status=experiment["research_status"],
         exploratory=bool(cfg.exploratory),
         hydraulic_gate_passed=experiment["hydraulic_gate_passed"],

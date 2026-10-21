@@ -111,6 +111,18 @@ class CompleteOverflowEnv(NeurosymbolicSWMMEnv):
 
     def _refresh_state(self):
         super()._refresh_state()
+        # Causal state required to reproduce the INP's gate logic at the
+        # external control interval. These values are already part
+        # of sys_state; named dictionaries make the rule prior auditable.
+        self._obs_dict["node_heads"] = {
+            n: float(self._node_obj[n].head) for n in self.list_nodes
+        }
+        self._obs_dict["link_flows"] = {
+            n: float(self._link_obj[n].flow) for n in self.list_links
+        }
+        self._obs_dict["link_settings"] = {
+            n: float(self._link_obj[n].current_setting) for n in self.list_links
+        }
         out = {n: float(self._node_obj[n].cumulative_inflow) * FT3_TO_M3
                for n in self.outfall_ids}
         flood = {n: float(self._node_obj[n].statistics["flooding_volume"]) * FT3_TO_M3
@@ -120,9 +132,9 @@ class CompleteOverflowEnv(NeurosymbolicSWMMEnv):
         cso_step = max(0.0, now["cso"] - previous["cso"])
         flood_step = max(0.0, now["flood"] - previous["flood"])
         self._obs_dict.update(
-            # Interval means capture spills missed by a 15-minute endpoint.
-            cso_flow=cso_step / (900.0 * FT3_TO_M3),
-            flooding=flood_step / (900.0 * FT3_TO_M3),
+            # Interval means capture spills missed by a control endpoint.
+            cso_flow=cso_step / (float(self.ctrl_step) * FT3_TO_M3),
+            flooding=flood_step / (float(self.ctrl_step) * FT3_TO_M3),
             cso_step_m3=cso_step, flood_step_m3=flood_step,
         )
         volumes = {n: float(self._node_obj[n].volume) for n in self.storage_ids}
@@ -162,7 +174,7 @@ class CompleteOverflowEnv(NeurosymbolicSWMMEnv):
             volume_units="m3", volume_method="SWMM cumulative node statistics",
             control_owner=control_owner,
             pump_control=pump_control,
-            flow_sampling="15-minute interval means from cumulative volumes",
+            flow_sampling=f"{self.ctrl_step}-second interval means from cumulative volumes",
             cso_definition="54+65+54_B+65_B", overflow_accounting_complete=True,
             cso_total=now["cso"], flood_total=now["flood"],
             cso_vol_m3=now["cso"], flood_vol_m3=now["flood"],
@@ -212,6 +224,16 @@ class CompleteOverflowEnv(NeurosymbolicSWMMEnv):
         self._node_peak_depths = {}
 
     def step(self, action, rainfall_series=None):
+        if hasattr(action, "detach"):
+            action = action.detach().cpu().numpy()
+        action = np.asarray(action, dtype=float).reshape(-1)
+        if getattr(self.kb, "native_rule_prior", False) and action.size == 3:
+            # Three learned residuals: Seven Mile route split, Shiawassee
+            # gate, and Puritan-Fenkell route split. Unowned gate slots are
+            # neutral placeholders consumed by CompleteOverflowKB.
+            expanded = np.full(7, 0.5, dtype=float)
+            expanded[[0, 2, 5]] = action
+            action = expanded
         result = super().step(action, rainfall_series)
         ids = ["1360", "1360_B", "35263", "35281_B", "35291_B", "3530", "3530_B",
                    "PUMP27@35395-3535", "PUMP28@35390-3535", "PUMP29@35445-3565"]
@@ -265,9 +287,21 @@ class CompleteOverflowKB(KnowledgeBaseV8):
     Emergency openings may trade CSO for flood relief; the four-outfall reward
     ensures this release is still charged to the controller.
     """
-    def __init__(self, *args, hard_bypass_mask=False, **kwargs):
+    def __init__(self, *args, hard_bypass_mask=False, native_rule_prior=False,
+                 residual_max=0.25, **kwargs):
         super().__init__(*args, **kwargs)
         self.hard_bypass_mask = bool(hard_bypass_mask)
+        self.native_rule_prior = bool(native_rule_prior)
+        self.residual_max = float(residual_max)
+        if self.hard_bypass_mask and self.native_rule_prior:
+            raise ValueError("hard_bypass_mask and native_rule_prior are separate ablations")
+        if not 0.0 <= self.residual_max <= 0.5:
+            raise ValueError("residual_max must be between 0 and 0.5")
+        self._native_targets = None
+
+    def reset_episode(self):
+        super().reset_episode()
+        self._native_targets = np.array([1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0])
 
     def _direct_bypass_gates(self):
         direct = [g for g, ctx in self.topo.items()
@@ -278,9 +312,72 @@ class CompleteOverflowKB(KnowledgeBaseV8):
             direct = [3, 4]
         return direct
 
+    def _native_rule_targets(self, obs):
+        """Causal control-interval rendering of the canonical INP gate rules.
+
+        This is intentionally not labelled true native control: SWMM checks
+        the original rules at every routing step, whereas the external policy
+        acts only once per configured external control interval.
+        """
+        try:
+            head = obs["node_heads"]
+            flow = obs["link_flows"]
+            setting = obs["link_settings"]
+        except KeyError as exc:
+            raise KeyError("native_rule_prior requires named heads, flows, and settings") from exc
+        target = self._native_targets.copy()
+        target[0] = 0.0 if head["35442"] > 605.0 else 1.0
+        target[1] = 1.0 if setting["1360"] <= 1e-9 else 0.0
+        target[3] = float(flow["35281_A"] > 231.0 and head["35440"] > 609.27)
+        target[4] = float(flow["35291_A"] > 321.0 and head["35390"] > 603.28)
+        target[5] = 0.0 if head["35391"] > 601.03 else 1.0
+        target[6] = 1.0 if setting["3530"] <= 1e-9 else 0.0
+
+        # Preserve the previous 35263 target when none of its native rules is
+        # active. Apply the INP conditions in priority order.
+        if setting["3530"] <= 1e-9 or head["35391"] > 603.0:
+            target[2] = 0.0
+        if head["3527"] > 605.0 and head["35391"] < 597.6:
+            target[2] = 0.25
+        if head["3527"] < 605.0 and head["35391"] < 597.6:
+            target[2] = 1.0
+        self._native_targets = target
+        return target.copy()
+
+    def _native_residual_action(self, raw_clipped, obs):
+        base = self._native_rule_targets(obs)
+        a = base.copy()
+        d7 = (raw_clipped[0] - 0.5) * 2.0 * self.residual_max
+        d2 = (raw_clipped[2] - 0.5) * 2.0 * self.residual_max
+        dpf = (raw_clipped[5] - 0.5) * 2.0 * self.residual_max
+        a[0], a[1] = base[0] + d7, base[1] - d7
+        a[2] = base[2] + d2
+        a[5], a[6] = base[5] + dpf, base[6] - dpf
+        return np.clip(a, 0.0, 1.0), base
+
     def project_action(self, raw, obs):
         raw_clipped = np.clip(np.asarray(raw, dtype=float), 0.0, 1.0)
         direct = self._direct_bypass_gates()
+        if self.native_rule_prior:
+            admissible, base = self._native_residual_action(raw_clipped, obs)
+            if raw_clipped.size >= 10:
+                admissible = np.r_[admissible, raw_clipped[7:]]
+            a = super().project_action(admissible, obs)
+            prior_explanations = [
+                dict(gate_idx=gate, rule="NATIVE_RULE_PRIOR",
+                     proposed=float(raw_clipped[gate]), applied=float(admissible[gate]),
+                     native_base=float(base[gate]), residual_max=self.residual_max,
+                     reason="Causal INP-rule prior plus bounded learned residual")
+                for gate in range(7)
+                if abs(admissible[gate] - raw_clipped[gate]) > 1e-9
+            ]
+            self.last_info["explanations"] = prior_explanations + self.last_info["explanations"]
+            self.last_info["admissible_action"] = admissible.copy()
+            self.last_info["actor_constraint"] = float(
+                np.abs(admissible[:7] - raw_clipped[:7]).mean())
+            self.last_info["intervention"] = float(
+                np.abs(a[:7] - admissible[:7]).mean())
+            return a
         admissible = raw_clipped.copy()
         if self.hard_bypass_mask:
             # These links discharge directly to untreated outfalls without

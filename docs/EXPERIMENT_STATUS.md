@@ -15,6 +15,14 @@
 > flood non-regression 4/6, scorecard 2/6, macro CSO reduction -131.40%, and
 > rising episode cost. Replay was deterministic. No scaled training follows.
 
+> **Native-rule/timing follow-up, 2026-10-21:** A causal three-action prior
+> based on the INP's coordinated gate rules improves CSO direction, but is not
+> safe enough to train. The centered 15-minute and 5-minute variants achieved
+> flood non-regression on 3/6 and 4/6 validation storms. TRAIN-only shield
+> grids found no setting with complete flood and total-overflow non-regression
+> at either interval. Both variants are now software-blocked from SAC. See
+> `docs/nativeprior_timing_diagnostic_20261021.md`.
+
 > **Training-readiness hardening, 2026-10-20:** 102 tests pass. Every official
 > v8 variant now shares cumulative four-outfall m3 accounting, exclusive agent
 > gate ownership, native pump interlocks, strict safety checkpoint selection,

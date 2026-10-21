@@ -574,8 +574,11 @@ class NeurosymbolicSWMMEnv(Env):
         preds = self.kb.evaluate_predicates(self._obs_dict)
         parts = [self.sys_state, preds]
         if getattr(self.kb, "extra_dim", 0) > 0:
-            # intervals already applied = t-1 (t is incremented BEFORE _build_obs in step()); causal, no forecast
-            parts.append(self.kb.extra_features(self._obs_dict, self._rain, max(self.t - 1, 0)))
+            # Rain files remain 15-minute depths even when an opt-in controller
+            # acts more frequently. Convert elapsed control time to completed
+            # rain intervals; never expose a future depth.
+            rain_n = int(max(self.t - 1, 0) * self.ctrl_step // CONTROL_TIME_STEP)
+            parts.append(self.kb.extra_features(self._obs_dict, self._rain, rain_n))
         return np.clip(np.concatenate(parts), -1e4, 1e4).astype(np.float32)
 
     def _clear_logs(self):
@@ -600,8 +603,10 @@ class NeurosymbolicSWMMEnv(Env):
     def step(self, raw_action: torch.Tensor, rainfall_series: np.ndarray = None):
         # Legacy callers may still pass rainfall_series; prefer instance _rain.
         rain = self._rain if rainfall_series is None else np.asarray(rainfall_series, dtype=np.float64)
-        assert rain is not None and len(rain) >= self.T, (
-            f"rainfall length {0 if rain is None else len(rain)} < episode steps {self.T}")
+        required_rain = (int(np.ceil(self.T * self.ctrl_step / CONTROL_TIME_STEP))
+                         if self.physical_rain else self.T)
+        assert rain is not None and len(rain) >= required_rain, (
+            f"rainfall length {0 if rain is None else len(rain)} < required intervals {required_rain}")
 
         if isinstance(raw_action, torch.Tensor):
             with torch.no_grad():
@@ -735,8 +740,10 @@ class NeurosymbolicSWMMEnv(Env):
         self.sim.close()
         self._init_sim()
         if self._rain is not None:
-            assert len(self._rain) >= self.T, (
-                f"rainfall length {len(self._rain)} < episode steps {self.T}")
+            required_rain = (int(np.ceil(self.T * self.ctrl_step / CONTROL_TIME_STEP))
+                             if self.physical_rain else self.T)
+            assert len(self._rain) >= required_rain, (
+                f"rainfall length {len(self._rain)} < required intervals {required_rain}")
         self.kb.reset_episode()
         self._clear_logs()
         obs = to_device(self._build_obs())
@@ -773,6 +780,7 @@ class NeurosymbolicSWMMEnv(Env):
             "max_depth_ratio": np.asarray(self.ep_maxdr_j, dtype=np.float64),   # name used by metrics_ext
             "cost": np.asarray(self.ep_cost, dtype=np.float64),
             "rule_flags": list(self.ep_rule_flags),
+            "control_step_s": int(self.ctrl_step),
         }
 
     def close(self):

@@ -33,6 +33,11 @@ def _cfg(variant):
                         policy_dim=10, policy_controls_pumps=True)),
         ("v8_actionmask", dict(complete_overflow=True, native_pumps=True,
                                hard_bypass_mask=True)),
+        ("v8_nativeprior", dict(complete_overflow=True, native_pumps=True,
+                                native_rule_prior=True, policy_dim=3)),
+        ("v8_nativeprior_5m", dict(complete_overflow=True, native_pumps=True,
+                                   native_rule_prior=True, policy_dim=3,
+                                   control_time_step=300)),
     ],
 )
 def test_v8_ablation_changes_only_named_factor(monkeypatch, variant, expected):
@@ -124,6 +129,15 @@ def test_theta_evidence_cannot_cross_exploratory_boundary(tmp_path):
     assert train_multi._load_theta(path, exploratory=True)["theta_f"] == 0.9
     with pytest.raises(ValueError, match="full-budget"):
         train_multi._load_theta(path, exploratory=False)
+
+
+@pytest.mark.parametrize("variant", ["v8_nativeprior", "v8_nativeprior_5m"])
+def test_unsafe_native_prior_variants_cannot_start_training(variant):
+    cfg = _cfg(variant)
+    cfg.exploratory = True
+    cfg.run_name = "exploratory_blocked"
+    with pytest.raises(RuntimeError, match="diagnostic-only"):
+        train_multi.main(cfg)
 
 
 def test_static_baseline_cannot_leak_projection_state():

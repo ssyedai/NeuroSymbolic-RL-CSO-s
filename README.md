@@ -94,7 +94,11 @@ The executed smoke result and its G3 failure diagnosis are documented in
 [`docs/exploratory_execution_20261021.md`](docs/exploratory_execution_20261021.md).
 The opt-in `v8_actionmask` follow-up resolves the intervention-accounting
 ambiguity, but it also fails G3 because CSO, flooding safety, and cost do not
-improve. Do not start `-Mode full` from either result.
+improve. A later native-rule/timing diagnostic improves CSO direction but fails
+the unchanged flooding and total-overflow screens at both 15- and 5-minute
+control intervals. Those variants are blocked from training. See
+[`docs/nativeprior_timing_diagnostic_20261021.md`](docs/nativeprior_timing_diagnostic_20261021.md).
+Do not start `-Mode full` from these results.
 
 ## Experiment sequence
 

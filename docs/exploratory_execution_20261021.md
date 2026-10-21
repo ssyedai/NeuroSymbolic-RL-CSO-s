@@ -167,12 +167,27 @@ Reproduce the ablation with:
   -Variant v8_actionmask -RunName exploratory_v8_actionmask_smoke_s0
 ```
 
+## Native-rule structure and timing follow-up
+
+A second diagnostic tested whether the poor CSO result came from ignoring the
+INP's coordinated gate logic. A causal three-action native-rule prior improved
+CSO, confirming the structural diagnosis, but failed the unchanged flood and
+total-overflow screens. A five-minute control sensitivity improved flood
+non-regression from 3/6 to 4/6 validation storms, but still added unacceptable
+flooding on C2 and C3. Training-only shield grids found no safe setting at
+either 15 or 5 minutes, so both variants are blocked from SAC.
+
+Exact methods and results are in
+[`nativeprior_timing_diagnostic_20261021.md`](nativeprior_timing_diagnostic_20261021.md).
+
 ## What is intentionally not run
 
 - The 300-episode pilot, multi-seed Tier 1/2 matrix, diet study, protocol tag,
   and test evaluation are not run because both smoke variants failed G3.
 - The reduced controllability screen is not promoted to formal G2.
 - The unsuccessful theta is not supplied to training.
+- The native-rule-prior variants are not trained because their pre-training
+  safety screens failed.
 - No hydraulic acceptance file is created and no validation threshold is
   relaxed.
 
