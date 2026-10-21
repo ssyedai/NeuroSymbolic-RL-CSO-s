@@ -205,6 +205,7 @@ class CompleteOverflowEnv(NeurosymbolicSWMMEnv):
     def _clear_logs(self):
         super()._clear_logs()
         self._explanations = []
+        self._admissible_actions = []
         self._usable_fill = []
         self._actual_actions = []
         self._target_actions = []
@@ -220,6 +221,16 @@ class CompleteOverflowEnv(NeurosymbolicSWMMEnv):
         if self.native_mode:
             self.ep_proj_actions[-1] = actual
             self.ep_raw_actions[-1] = actual.copy()
+            admissible = actual.copy()
+        elif self.use_projection:
+            admissible = np.asarray(
+                getattr(self.kb, "last_info", {}).get(
+                    "admissible_action", self.ep_raw_actions[-1]),
+                dtype=float,
+            ).copy()
+        else:
+            admissible = self.ep_raw_actions[-1].copy()
+        self._admissible_actions.append(admissible)
         self._explanations.append(list(getattr(self.kb, "last_info", {}).get("explanations", [])))
         self._usable_fill.append(self._obs_dict["usable_store_fill_ratio"])
         if result[2] or result[3]:
@@ -240,6 +251,7 @@ class CompleteOverflowEnv(NeurosymbolicSWMMEnv):
                    node_flood_volumes_m3=dict(self._node_flood_volumes),
                    actions_actual=np.asarray(self._actual_actions),
                    actions_target=np.asarray(self._target_actions),
+                   actions_admissible=np.asarray(self._admissible_actions),
                    node_peak_depth_ft=dict(getattr(self, "_node_peak_depths", {})),
                    rule_explanations=list(self._explanations),
                    usable_store_fill_ratio=np.asarray(self._usable_fill))
@@ -253,14 +265,46 @@ class CompleteOverflowKB(KnowledgeBaseV8):
     Emergency openings may trade CSO for flood relief; the four-outfall reward
     ensures this release is still charged to the controller.
     """
-    def project_action(self, raw, obs):
-        a = super().project_action(raw, obs)
+    def __init__(self, *args, hard_bypass_mask=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.hard_bypass_mask = bool(hard_bypass_mask)
+
+    def _direct_bypass_gates(self):
         direct = [g for g, ctx in self.topo.items()
                   if ctx.get("cso_outfalls_down") and not ctx.get("storage_down")]
         # Backward compatibility for old generated topology CSVs. New topology
         # files identify these gates from the graph instead of their indices.
         if not direct and not any("cso_outfalls_down" in ctx for ctx in self.topo.values()):
             direct = [3, 4]
+        return direct
+
+    def project_action(self, raw, obs):
+        raw_clipped = np.clip(np.asarray(raw, dtype=float), 0.0, 1.0)
+        direct = self._direct_bypass_gates()
+        admissible = raw_clipped.copy()
+        if self.hard_bypass_mask:
+            # These links discharge directly to untreated outfalls without
+            # downstream storage. Their normal closed state is part of the
+            # action-space definition, not a learned proposal that the shield
+            # rejects on every step. The dynamic shield may still reopen them
+            # for a depth/flood emergency.
+            admissible[direct] = 0.0
+        a = super().project_action(admissible, obs)
+        if self.hard_bypass_mask:
+            mask_explanations = [
+                dict(gate_idx=gate, rule="ACTION_MASK",
+                     proposed=float(raw_clipped[gate]), applied=0.0,
+                     reason="Direct untreated bypass is normally closed")
+                for gate in direct if raw_clipped[gate] > 0.0
+            ]
+            self.last_info["explanations"] = mask_explanations + self.last_info["explanations"]
+            self.last_info["admissible_action"] = admissible.copy()
+            self.last_info["actor_constraint"] = float(
+                np.abs(admissible[:7] - raw_clipped[:7]).mean())
+            self.last_info["intervention"] = float(
+                np.abs(a[:7] - admissible[:7]).mean())
+            return a
+
         for gate in direct:
             ctx = self.topo[gate]
             risk = max(self._dr(obs, ctx["risk_up"]) or [0.0])
@@ -271,7 +315,12 @@ class CompleteOverflowKB(KnowledgeBaseV8):
                     upstream_depth_ratio=float(risk), reason="Untreated bypass; no upstream flood trigger",
                     affected_outfalls=list(ctx.get("cso_outfalls_down", []))))
                 a[gate] = 0.0
-        self.last_info["intervention"] = float(np.abs(a[:7] - np.clip(np.asarray(raw)[:7], 0, 1)).mean())
+        # Default behaviour and metric semantics remain unchanged. Only the
+        # opt-in hard-mask ablation separates actor constraints from the
+        # dynamic hydraulic shield.
+        self.last_info["admissible_action"] = raw_clipped.copy()
+        self.last_info["actor_constraint"] = 0.0
+        self.last_info["intervention"] = float(np.abs(a[:7] - raw_clipped[:7]).mean())
         return a
 
     def cost(self, obs):

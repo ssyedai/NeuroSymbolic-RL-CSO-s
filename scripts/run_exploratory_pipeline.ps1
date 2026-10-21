@@ -3,6 +3,8 @@ param(
     [string]$Mode = "smoke",
     [int]$Workers = 4,
     [int]$Seed = 0,
+    [ValidateSet("v8", "v8_actionmask")]
+    [string]$Variant = "v8",
     [string]$RunName = "exploratory_v8_smoke_s0"
 )
 
@@ -91,7 +93,7 @@ $maxVal = if ($Mode -eq "full") { 0 } else { 6 }
 $trainArgs = @(
     "-m", "multistorm.train_multi",
     "--rain-dir", $scenarios, "--split-manifest", $splits,
-    "--variant", "v8", "--diet", "D2_ladder100",
+    "--variant", $Variant, "--diet", "D2_ladder100",
     "--physical-rain", "--real-only", "--episodes", "$episodes",
     "--warmup-steps", "$warmup", "--eval-every", "$evalEvery",
     "--updates-per-step", "0.25", "--max-val-eval", "$maxVal",

@@ -30,9 +30,17 @@ def extended_summary(L: dict) -> dict:
     raw = np.asarray(L.get("actions_raw", acts), float)
     if raw.ndim == 2 and raw.shape[1] >= 7:
         raw = raw[:, :7]
+    admissible = np.asarray(L.get("actions_admissible", raw), float)
+    if admissible.ndim == 2 and admissible.shape[1] >= 7:
+        admissible = admissible[:, :7]
     v_cso = float(cso.sum() * CFS_TO_M3_PER_STEP)
     v_pump = float(pump.sum() * CFS_TO_M3_PER_STEP)
-    d = np.abs(acts - raw) if acts.shape == raw.shape else np.zeros_like(acts)
+    d = (np.abs(acts - admissible)
+         if acts.shape == admissible.shape else np.zeros_like(acts))
+    constrained = (np.abs(admissible - raw)
+                   if admissible.shape == raw.shape else np.zeros_like(acts))
+    total_override = (np.abs(acts - raw)
+                      if acts.shape == raw.shape else np.zeros_like(acts))
     dA = np.diff(acts, axis=0) if len(acts) > 1 else np.zeros((0, acts.shape[-1] if acts.ndim == 2 else 0))
     sgn = np.sign(np.where(np.abs(dA) > 0.02, dA, 0.0)) if len(dA) else np.zeros((0, 1))
     reversals = int(np.sum((sgn[1:] * sgn[:-1]) < 0)) if len(sgn) > 1 else 0
@@ -48,6 +56,10 @@ def extended_summary(L: dict) -> dict:
         gate_reversals=reversals,
         intervention_rate=float((d.max(axis=1) > 1e-6).mean()) if len(d) else 0.0,
         intervention_mag=float(d.mean()) if len(d) else 0.0,
+        actor_constraint_rate=float((constrained.max(axis=1) > 1e-6).mean()) if len(constrained) else 0.0,
+        actor_constraint_mag=float(constrained.mean()) if len(constrained) else 0.0,
+        total_override_rate=float((total_override.max(axis=1) > 1e-6).mean()) if len(total_override) else 0.0,
+        total_override_mag=float(total_override.mean()) if len(total_override) else 0.0,
         max_depth_ratio_peak=float(np.max(L["max_depth_ratio"])) if "max_depth_ratio" in L else float("nan"),
         routing_error_pct=float(L.get("routing_error_pct", float("nan"))),
         runoff_error_pct=float(L.get("runoff_error_pct", float("nan"))),

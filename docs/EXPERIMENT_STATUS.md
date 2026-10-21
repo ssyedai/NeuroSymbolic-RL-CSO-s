@@ -8,6 +8,13 @@
 > No test evaluation, protocol tag, full pilot, or performance claim follows.
 > See `docs/exploratory_execution_20261021.md`.
 
+> **Action-mask follow-up, 2026-10-21:** The opt-in `v8_actionmask` ablation
+> separates the permanent direct-bypass gate constraint from dynamic safety
+> interventions. On the matched 20-episode smoke, dynamic intervention fell
+> from 1.0 to 0.0295, but G3 still failed: final deterministic validation had
+> flood non-regression 4/6, scorecard 2/6, macro CSO reduction -131.40%, and
+> rising episode cost. Replay was deterministic. No scaled training follows.
+
 > **Training-readiness hardening, 2026-10-20:** 102 tests pass. Every official
 > v8 variant now shares cumulative four-outfall m3 accounting, exclusive agent
 > gate ownership, native pump interlocks, strict safety checkpoint selection,

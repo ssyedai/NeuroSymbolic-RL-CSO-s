@@ -140,7 +140,7 @@ def run_baseline_episode_for(storm: Storm) -> float:
 def build_v8(seed, theta=None, use_projection=True, lagrangian=True, rain_features=True,
              cost_limit=0.05, lam_init=0.5, lam_lr=0.02, complete_overflow=False,
              policy_dim=7, topology_aware=True, w_store=2.0, native_pumps=True,
-             policy_controls_pumps=False,
+             policy_controls_pumps=False, hard_bypass_mask=False,
              input_file="7MPF_CSO_08.inp"):
     """P11 — v8 stack: KnowledgeBaseV8 + 7-D SAC-Lag + physical-rain-ready env."""
     import pandas as pd
@@ -174,13 +174,14 @@ def build_v8(seed, theta=None, use_projection=True, lagrangian=True, rain_featur
             for name in ("risk_up", "storage_down", "weirs_down", "cso_outfalls_down")
         }
         topology = {g: {k: list(v) for k, v in global_context.items()} for g in range(7)}
-    kb = kb_class(
-        full, list(nodes[nodes.junction].id),
-        topology,
+    kb_kwargs = dict(
         theta=theta, use_rain_features=rain_features,
         w_store=w_store, horizon=288 if complete_overflow else 287,
         freeze_pumps=not policy_controls_pumps,
     )
+    if complete_overflow:
+        kb_kwargs["hard_bypass_mask"] = hard_bypass_mask
+    kb = kb_class(full, list(nodes[nodes.junction].id), topology, **kb_kwargs)
     env = env_class(
         kb, input_file=input_file, use_projection=use_projection, policy_dim=policy_dim,
         time_limit_truncation=True, real_only=True,

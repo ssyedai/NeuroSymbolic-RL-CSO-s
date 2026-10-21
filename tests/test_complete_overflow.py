@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from multistorm.complete_overflow import storage_capacities, CompleteOverflowKB
+from multistorm.metrics_ext import extended_summary
 from multistorm.metrics_v8 import enrich
 from multistorm.safety_selection import validation_selection
 from multistorm.storms import load_storms
@@ -25,9 +26,44 @@ def test_bypass_rule_has_auditable_flood_exception():
     obs = dict(node_depths={"up": 1}, flooding=0, cso_flow=0)
     action = kb.project_action(np.full(7, 0.3), obs)
     assert np.all(action[3:5] == 0)
+    np.testing.assert_allclose(kb.last_info["admissible_action"], np.full(7, 0.3))
+    assert kb.last_info["actor_constraint"] == 0.0
+    assert kb.last_info["intervention"] > 0
     assert len([r for r in kb.last_info["explanations"] if r["rule"] == "BYPASS_CLOSE"]) == 2
     action = kb.project_action(np.full(7, 0.3), {**obs, "node_depths": {"up": 9.5}})
     assert np.all(action[3:5] >= 0.5)
+
+
+def test_hard_bypass_mask_separates_actor_constraint_from_dynamic_shield():
+    topo = {g: dict(risk_up=["up"], storage_down=[], weirs_down=[])
+            for g in range(7)}
+    obs = dict(node_depths={"up": 1}, flooding=0, cso_flow=0)
+    raw = np.full(7, 0.3)
+    kb = CompleteOverflowKB({"up": 10}, ["up"], topo, hard_bypass_mask=True)
+
+    projected = kb.project_action(raw, obs)
+    np.testing.assert_allclose(kb.last_info["admissible_action"][3:5], 0.0)
+    np.testing.assert_allclose(projected[3:5], 0.0)
+    assert kb.last_info["actor_constraint"] > 0
+    assert kb.last_info["intervention"] == pytest.approx(0.0)
+
+    emergency = kb.project_action(raw, {**obs, "node_depths": {"up": 9.5}})
+    assert np.all(emergency[3:5] >= 0.5)
+    assert kb.last_info["intervention"] > 0
+
+
+def test_extended_metrics_report_mask_and_shield_separately():
+    raw = np.full((2, 7), 0.5)
+    admissible = raw.copy()
+    admissible[:, 3:5] = 0.0
+    log = dict(
+        cso_flow=np.zeros(2), actions_raw=raw,
+        actions_admissible=admissible, actions_projected=admissible,
+    )
+    metrics = extended_summary(log)
+    assert metrics["actor_constraint_rate"] == 1.0
+    assert metrics["intervention_rate"] == 0.0
+    assert metrics["total_override_rate"] == 1.0
 
 
 def test_shield_uses_capacity_below_overflow_crest():

@@ -26,6 +26,7 @@ log = logging.getLogger("train")
 V8_VARIANTS = {
     "v8", "v8_complete", "plain", "lag_only", "b2", "b3",
     "v8_notopo", "v8_nostore", "v8_nolag", "v8_noshield", "v8_norain", "v8_10d",
+    "v8_actionmask",
 }
 
 
@@ -132,6 +133,8 @@ def _build_stack(cfg):
     if v == "v8_10d":
         return v8_stack(theta=theta, policy_dim=10, native_pumps=False,
                         policy_controls_pumps=True)
+    if v == "v8_actionmask":
+        return v8_stack(theta=theta, hard_bypass_mask=True)
     # v7 / m0 / legacy
     env, agent, kb = A.build(cfg.seed)
     if cfg.physical_rain or cfg.real_only:
@@ -256,9 +259,16 @@ def main(cfg=None):
     theta_hash = None
     if cfg.theta_path and Path(cfg.theta_path).exists():
         theta_hash = hashlib.sha256(Path(cfg.theta_path).read_bytes()).hexdigest()
+    git_dirty_files = []
+    git_diff_sha256 = None
     try:
         import subprocess
         git_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+        git_dirty_files = subprocess.check_output(
+            ["git", "status", "--porcelain"], text=True).splitlines()
+        if git_dirty_files:
+            git_diff = subprocess.check_output(["git", "diff", "--binary", "HEAD"])
+            git_diff_sha256 = hashlib.sha256(git_diff).hexdigest()
     except Exception:
         git_hash = None
     strict_selection = bool(cfg.strict_safety_selection or cfg.variant in V8_VARIANTS)
@@ -275,11 +285,14 @@ def main(cfg=None):
         from .complete_overflow import COMPLETE_BASELINE_TAG, EXPLORATORY_BASELINE_TAG
         config_baseline_tag = (EXPLORATORY_BASELINE_TAG if cfg.exploratory
                                else COMPLETE_BASELINE_TAG)
-    run_cfg = dict(asdict(cfg), git_hash=git_hash, manifest_hash=man_hash, theta_hash=theta_hash,
+    run_cfg = dict(asdict(cfg), git_hash=git_hash, git_dirty=bool(git_dirty_files),
+                   git_dirty_files=git_dirty_files, git_diff_sha256=git_diff_sha256,
+                   manifest_hash=man_hash, theta_hash=theta_hash,
                    baseline_tag=config_baseline_tag,
                    effective_strict_safety_selection=strict_selection,
                    effective_native_pumps=cfg.variant != "v8_10d",
                    effective_policy_controls_pumps=cfg.variant == "v8_10d",
+                   effective_hard_bypass_mask=cfg.variant == "v8_actionmask",
                    **experiment,
                    python_version=platform.python_version(), lib_versions=versions)
     (run / "run_config.json").write_text(json.dumps(run_cfg, indent=1, default=str))
@@ -308,6 +321,7 @@ def main(cfg=None):
         theta_hash=theta_hash, manifest_hash=man_hash, baseline_tag=baseline_tag,
         action_dim=int(env.action_space.shape[0]),
         pump_control="external policy" if cfg.variant == "v8_10d" else "INP native",
+        hard_bypass_mask=cfg.variant == "v8_actionmask",
         research_status=experiment["research_status"],
         exploratory=bool(cfg.exploratory),
         hydraulic_gate_passed=experiment["hydraulic_gate_passed"],

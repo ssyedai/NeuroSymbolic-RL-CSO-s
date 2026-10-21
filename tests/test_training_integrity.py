@@ -31,6 +31,8 @@ def _cfg(variant):
                            topology_aware=False)),
         ("v8_10d", dict(complete_overflow=True, native_pumps=False,
                         policy_dim=10, policy_controls_pumps=True)),
+        ("v8_actionmask", dict(complete_overflow=True, native_pumps=True,
+                               hard_bypass_mask=True)),
     ],
 )
 def test_v8_ablation_changes_only_named_factor(monkeypatch, variant, expected):

@@ -113,21 +113,64 @@ drive an action that the shield always overwrites exactly to zero.
 
 This makes the current intervention acceptance check structurally infeasible
 for the full shield. It must not be “fixed” by raising the allowed 0.5 rate.
-A defensible next experiment should separate:
+The follow-up experiment therefore separates:
 
 1. a declared hard action-space constraint for normally closed direct-bypass
    gates, and
 2. dynamic shield interventions caused by changing hydraulic risk.
 
 Both the actor-to-admissible constraint rate and the admissible-to-executed
-dynamic intervention rate must be logged. This is a protocol-level semantic
-change and needs its own ablation against the current seven-free-action design.
-It does not address the observed CSO and cost regression by itself.
+dynamic intervention rate are logged. This is an opt-in ablation named
+`v8_actionmask`; the existing V8 and V7 paths are unchanged.
+
+## Action-mask ablation result
+
+The matched run used the same seed, D2 training pool, 20 episodes, 500-step
+warm-up, update rate, and validation cap as the V8 smoke. Gates 35281_B and
+35291_B were set to their normally closed admissible value before the dynamic
+shield. The shield could still open them for a depth or flooding emergency.
+
+This separation fixed the measurement problem, not the control problem:
+
+- Mean dynamic intervention rate was 0.0295, below the unchanged 0.5 limit.
+- Actor-to-admissible constraint rate was 1.0 and total override rate was 1.0.
+  These remain visible rather than being relabelled as no intervention.
+- The six-storm deterministic validation replay had flood non-regression 4/6
+  and scorecard pass 2/6.
+- Macro CSO reduction over the four storms with a nonzero native denominator
+  was -131.40%; C1 was -518.25%, C1.5 -6.64%, C2 -2.63%, and C3 +1.93%.
+- Mean episode cost increased from 0.02296 over the first five episodes to
+  13.05641 over the last five. Critical training fields were finite; lambda
+  stayed below its cap and ended at zero.
+- The episode-20 selection score remained `-inf`; no `best_val.pt` was saved.
+- Replaying `final.pt` twice in a fresh process agreed to tolerance `1e-9`.
+
+The result is almost identical to the original V8 run on CSO, as expected:
+the ablation changes action ownership/accounting, while retaining the same
+normal and emergency executed settings. G3 therefore still fails because cost
+does not trend down, flood non-regression is below 95%, and CSO is worse than
+native. The 300-episode pilot remains blocked.
+
+Run: `runs/exploratory/exploratory_v8_actionmask_smoke_s0/`. The generated run
+is local and ignored by Git.
+
+The run used base commit `ab7402ff3b0918b1f6cef9d526cfdae831ea02ec` plus
+the action-mask code diff whose SHA-256 is
+`5fcf834edd49bd4bdd4b3781c770736a3a4ca2942567ac16f609b892e22cb1ff`.
+Future run configurations record dirty-tree state and the full Git diff hash
+automatically.
+
+Reproduce the ablation with:
+
+```powershell
+.\scripts\run_exploratory_pipeline.ps1 -Mode smoke `
+  -Variant v8_actionmask -RunName exploratory_v8_actionmask_smoke_s0
+```
 
 ## What is intentionally not run
 
 - The 300-episode pilot, multi-seed Tier 1/2 matrix, diet study, protocol tag,
-  and test evaluation are not run because G3 failed.
+  and test evaluation are not run because both smoke variants failed G3.
 - The reduced controllability screen is not promoted to formal G2.
 - The unsuccessful theta is not supplied to training.
 - No hydraulic acceptance file is created and no validation threshold is

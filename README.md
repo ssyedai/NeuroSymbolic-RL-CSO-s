@@ -92,8 +92,9 @@ runs hundreds of SWMM episodes per train/validation storm.
 
 The executed smoke result and its G3 failure diagnosis are documented in
 [`docs/exploratory_execution_20261021.md`](docs/exploratory_execution_20261021.md).
-Do not start `-Mode full` from that result: first resolve the hard direct-bypass
-action ownership versus dynamic shield-intervention semantics described there.
+The opt-in `v8_actionmask` follow-up resolves the intervention-accounting
+ambiguity, but it also fails G3 because CSO, flooding safety, and cost do not
+improve. Do not start `-Mode full` from either result.
 
 ## Experiment sequence
 
