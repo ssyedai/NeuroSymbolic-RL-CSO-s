@@ -14,20 +14,36 @@ from research.readiness import experiment_status, isolated_output
 
 
 def _balanced_cap(storms, limit):
-    """Deterministically spread a diagnostic cap across severity rungs."""
+    """Spread a diagnostic cap across rungs, alternating train and validation."""
     if not limit or len(storms) <= limit:
         return list(storms)
     groups = {}
     for storm in sorted(storms, key=lambda s: s.storm_id):
-        key = str((storm.meta or {}).get("rung", "unknown"))
-        groups.setdefault(key, []).append(storm)
+        rung = str((storm.meta or {}).get("rung", "unknown"))
+        groups.setdefault(rung, {}).setdefault(storm.split, []).append(storm)
     chosen = []
+    pass_no = 0
     while len(chosen) < limit and groups:
-        for key in sorted(list(groups)):
-            if groups[key] and len(chosen) < limit:
-                chosen.append(groups[key].pop(0))
-            if not groups[key]:
-                del groups[key]
+        progressed = False
+        for i, rung in enumerate(sorted(list(groups))):
+            if len(chosen) >= limit:
+                break
+            preferred = ("train", "val")[(i + pass_no) % 2]
+            available = groups[rung]
+            split = preferred if available.get(preferred) else next(
+                (name for name in sorted(available) if available[name]), None)
+            if split is None:
+                del groups[rung]
+                continue
+            chosen.append(available[split].pop(0))
+            progressed = True
+            if not available[split]:
+                del available[split]
+            if not available:
+                del groups[rung]
+        if not progressed:
+            break
+        pass_no += 1
     return chosen
 
 
@@ -82,6 +98,7 @@ def main(argv=None):
         max_storms=a.max_storms, static_n=a.static_n,
         cma_iters=a.cma_iters, cma_pop=a.cma_pop,
         skip_cma=bool(a.skip_cma), full_protocol_budget=full_budget,
+        selection_strategy="rung_then_alternating_split_v2",
     )
     run_config_path = Path(str(out) + ".run_config.json")
     if out.exists():

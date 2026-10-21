@@ -26,7 +26,7 @@ $rainSource = "data/useful/rain_real_full"
 $onset = "runs/exploratory/onset_table.csv"
 $scenarios = "data/useful/exploratory/rain_scenarios"
 $splits = "$scenarios/splits.json"
-$g2 = "runs/exploratory/controllability_$Mode.csv"
+$g2 = "runs/exploratory/controllability_${Mode}_v2.csv"
 $theta = "runs/exploratory/theta_$Mode.json"
 
 Write-Warning "EXPLORATORY ONLY: the native hydraulic reference has not passed the fixed step-size gate."

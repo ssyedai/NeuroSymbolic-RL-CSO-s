@@ -108,13 +108,15 @@ def main(argv=None):
             for st in pool:
                 rec = bstore.get(st)
                 n = rec.get("native") or rec["static"]
-                rows.append(dict(storm_id=st.storm_id, split=st.split, phase="b1",
-                                 family=(st.meta or {}).get("family"),
-                                 rung=(st.meta or {}).get("rung"),
-                                 k=(st.meta or {}).get("k"),
-                                 T_anchor=(st.meta or {}).get("T_anchor"),
-                                 parent=(st.meta or {}).get("parent", st.storm_id),
-                                 **n, **enrich(n, n)))
+                row = dict(storm_id=st.storm_id, split=st.split, phase="b1",
+                           family=(st.meta or {}).get("family"),
+                           rung=(st.meta or {}).get("rung"),
+                           k=(st.meta or {}).get("k"),
+                           T_anchor=(st.meta or {}).get("T_anchor"),
+                           parent=(st.meta or {}).get("parent", st.storm_id))
+                row.update(n)
+                row.update(enrich(n, n))
+                rows.append(row)
             frame = pd.DataFrame(rows)
             frame["research_status"] = status["research_status"]
             frame["hydraulic_gate_passed"] = status["hydraulic_gate_passed"]

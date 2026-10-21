@@ -84,14 +84,17 @@ def test_exploratory_controllability_summary_can_be_selected():
 
 def test_diagnostic_cap_spreads_across_rungs():
     storms = [
-        SimpleNamespace(storm_id=f"a{i}", meta={"rung": "C1"})
+        SimpleNamespace(storm_id=f"a{i}", split=("train" if i < 2 else "val"),
+                        meta={"rung": "C1"})
         for i in range(4)
     ] + [
-        SimpleNamespace(storm_id=f"b{i}", meta={"rung": "T10"})
+        SimpleNamespace(storm_id=f"b{i}", split=("train" if i < 2 else "val"),
+                        meta={"rung": "T10"})
         for i in range(4)
     ]
     selected = _balanced_cap(storms, 2)
     assert {s.meta["rung"] for s in selected} == {"C1", "T10"}
+    assert {s.split for s in selected} == {"train", "val"}
     selected_train = train_multi._balanced_rung_cap(storms, 2)
     assert {s.meta["rung"] for s in selected_train} == {"C1", "T10"}
 

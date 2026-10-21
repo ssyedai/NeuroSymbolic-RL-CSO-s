@@ -1,5 +1,13 @@
 # Experiment status vs guides
 
+> **Exploratory pipeline result, 2026-10-21:** The isolated exploratory path
+> completed G1 and a bounded train/validation smoke execution, but failed G3.
+> G1: 416 parents, median onset 3.7224, 0 missing. The 20-episode V8 run had no
+> NaNs but no safety-feasible checkpoint; validation CSO was about 137% worse
+> than native at episode 20, intervention rate was 1.0, and cost increased.
+> No test evaluation, protocol tag, full pilot, or performance claim follows.
+> See `docs/exploratory_execution_20261021.md`.
+
 > **Training-readiness hardening, 2026-10-20:** 102 tests pass. Every official
 > v8 variant now shares cumulative four-outfall m3 accounting, exclusive agent
 > gate ownership, native pump interlocks, strict safety checkpoint selection,

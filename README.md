@@ -90,6 +90,11 @@ claims, and protocol freezing remain blocked until the native hydraulic gate
 passes. The full mode is computationally expensive because hindsight search
 runs hundreds of SWMM episodes per train/validation storm.
 
+The executed smoke result and its G3 failure diagnosis are documented in
+[`docs/exploratory_execution_20261021.md`](docs/exploratory_execution_20261021.md).
+Do not start `-Mode full` from that result: first resolve the hard direct-bypass
+action ownership versus dynamic shield-intervention semantics described there.
+
 ## Experiment sequence
 
 After the hydraulic gate is independently passed without changing its threshold:
